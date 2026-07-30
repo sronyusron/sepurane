@@ -247,6 +247,7 @@ app.post('/api/bot/start', (req, res) => {
 
     // Simple stdout/stderr logging + payment detection
     let outputAccumulator = '';
+    let notifSent = false; // Only send one notification per bot run
     
     botProcess.stdout.on('data', (data) => {
       const clean = data.toString().replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
@@ -254,41 +255,57 @@ app.post('/api/bot/start', (req, res) => {
         addLog(line.trim(), 'info');
       });
       
-      // Accumulate output to detect payment success
+      // Accumulate output to detect success
       outputAccumulator += clean;
       
-      // Detect payment success pattern
-      if (outputAccumulator.includes('PAYMENT BERHASIL') || outputAccumulator.includes('BERHASIL')) {
-        // Extract payment info from accumulated output
-        const paymentBlock = outputAccumulator;
+      // Only send notification once per run
+      if (notifSent) {
+        if (outputAccumulator.length > 5000) outputAccumulator = outputAccumulator.slice(-2000);
+        return;
+      }
+
+      // Pattern 1: "PAYMENT BERHASIL" (VA mode)
+      if (outputAccumulator.includes('PAYMENT BERHASIL')) {
+        notifSent = true;
+        const block = outputAccumulator;
+        const widgetMatch = block.match(/Widget Code[:\s]*([^\n\r]+)/i);
+        const paymentMatch = block.match(/Payment[:\s]*([^\n\r]+)/i);
+        const emailMatch = block.match(/Email[:\s]*([^\n\r]+)/i);
+        const ticketMatch = block.match(/Type Ticket[:\s]*([^\n\r]+)/i);
+        const namaMatch = block.match(/Nama[:\s]*([^\n\r]+)/i);
+        const linkMatch = block.match(/(https?:\/\/[^\s\n\r]+)/i);
         
-        // Parse payment details
-        const widgetMatch = paymentBlock.match(/Widget Code[:\s]*([^\n\r]+)/i);
-        const paymentMatch = paymentBlock.match(/Payment[:\s]*([^\n\r]+)/i);
-        const emailMatch = paymentBlock.match(/Email[:\s]*([^\n\r]+)/i);
-        const ticketMatch = paymentBlock.match(/Type Ticket[:\s]*([^\n\r]+)/i);
-        const namaMatch = paymentBlock.match(/Nama[:\s]*([^\n\r]+)/i);
-        const linkMatch = paymentBlock.match(/(https?:\/\/[^\s\n\r]+)/i);
-        
-        // Build Telegram message
         let tgMsg = '✅ <b>LOKET PAYMENT BERHASIL!</b>\n\n';
         if (widgetMatch) tgMsg += `🎫 Widget Code: <code>${widgetMatch[1].trim()}</code>\n`;
         if (paymentMatch) tgMsg += `💳 Payment: <code>${paymentMatch[1].trim()}</code>\n`;
         if (emailMatch) tgMsg += `📧 Email: ${emailMatch[1].trim()}\n`;
         if (ticketMatch) tgMsg += `🎟 Tiket: ${ticketMatch[1].trim()}\n`;
         if (namaMatch) tgMsg += `👤 Nama: ${namaMatch[1].trim()}\n`;
-        if (linkMatch) tgMsg += `\n🔗 <b>Link Payment:</b>\n${linkMatch[1].trim()}`;
-        
-        if (!linkMatch && !widgetMatch) {
-          // Fallback: send raw success block
-          tgMsg += '\n' + paymentBlock.substring(paymentBlock.lastIndexOf('BERHASIL') - 50, paymentBlock.lastIndexOf('BERHASIL') + 500).trim();
-        }
+        if (linkMatch) tgMsg += `\n🔗 <b>Link:</b>\n${linkMatch[1].trim()}`;
         
         sendTelegramNotif(tgMsg);
-        outputAccumulator = ''; // Reset after sending
+        outputAccumulator = '';
+      }
+      // Pattern 2: "Invoice Code" + "Browser terbuka" (non-VA mode / checkout mode)
+      else if (outputAccumulator.includes('Invoice Code') && outputAccumulator.includes('Browser terbuka')) {
+        notifSent = true;
+        const block = outputAccumulator;
+        const invoiceIdMatch = block.match(/Invoice ID[:\s]*([^\n\r]+)/i);
+        const invoiceCodeMatch = block.match(/Invoice Code[:\s]*([^\n\r]+)/i);
+        const totalMatch = block.match(/Grand Total[:\s]*([^\n\r]+)/i);
+        const csrfMatch = block.match(/CSRF Token[:\s]*([^\n\r]+)/i);
+        
+        let tgMsg = '✅ <b>LOKET ORDER BERHASIL!</b>\n\n';
+        tgMsg += '🎉 <i>Browser terbuka di halaman invoice</i>\n\n';
+        if (invoiceCodeMatch) tgMsg += `🎫 Invoice Code: <code>${invoiceCodeMatch[1].trim()}</code>\n`;
+        if (invoiceIdMatch) tgMsg += `🆔 Invoice ID: <code>${invoiceIdMatch[1].trim()}</code>\n`;
+        if (totalMatch) tgMsg += `💰 Total: ${totalMatch[1].trim()}\n`;
+        
+        sendTelegramNotif(tgMsg);
+        outputAccumulator = '';
       }
       
-      // Keep accumulator manageable (max 5000 chars)
+      // Keep accumulator manageable
       if (outputAccumulator.length > 5000) {
         outputAccumulator = outputAccumulator.slice(-2000);
       }
