@@ -21,11 +21,11 @@ function esc(s){const d=document.createElement('div');d.textContent=s;return d.i
 
 // Navigation
 const titles={dashboard:'Dashboard',config:'Konfigurasi',datainput:'Data Pembeli',cookie:'Cookie (Hasil)',logs:'Log Bot'};
-document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',e=>{
+document.querySelectorAll('.sidebar-nav a').forEach(n=>n.addEventListener('click',e=>{
   e.preventDefault();switchSection(n.dataset.section);$('sidebar').classList.remove('open');
 }));
 function switchSection(name){
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.sidebar-nav a').forEach(n=>n.classList.remove('active'));
   document.querySelector(`[data-section="${name}"]`).classList.add('active');
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   $('section-'+name).classList.add('active');
