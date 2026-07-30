@@ -94,19 +94,85 @@
     </div>
   </main>
 </div>
-<!-- Mode Selection Modal -->
+<!-- Bot Start Wizard Modal -->
 <div class="modal hidden" id="modal-mode">
   <div class="modal-overlay"></div>
-  <div class="modal-content">
-    <div class="modal-header"><h3><i class="fas fa-play-circle"></i> Pilih Mode Bot</h3><button class="modal-close" id="close-mode-modal">&times;</button></div>
+  <div class="modal-content" style="max-width:600px">
+    <div class="modal-header"><h3><i class="fas fa-play-circle"></i> Konfigurasi & Jalankan Bot</h3><button class="modal-close" id="close-mode-modal">&times;</button></div>
     <div class="modal-body">
-      <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px;">Pilih fitur bot yang ingin dijalankan:</p>
-      <div class="mode-grid">
-        <button class="mode-btn" data-mode="1"><span class="mode-num">1</span><span class="mode-text">Auto Order<br><small>Input Link Widget Manual</small></span></button>
-        <button class="mode-btn" data-mode="2"><span class="mode-num">2</span><span class="mode-text">Auto Order<br><small>Auto Get Link Widget By Loket App</small></span></button>
-        <button class="mode-btn" data-mode="3"><span class="mode-num">3</span><span class="mode-text">Auto Order<br><small>Auto Get Link Widget By Story Instagram</small></span></button>
-        <button class="mode-btn" data-mode="4"><span class="mode-num">4</span><span class="mode-text">Auto Order<br><small>Auto Get Link Widget By Event Widget</small></span></button>
-      </div>
+      <form id="start-bot-form">
+        <!-- 1. Mode -->
+        <div class="form-group">
+          <label><i class="fas fa-list"></i> Fitur Bot</label>
+          <select id="s_mode">
+            <option value="1">1 - Auto Order (Input Link Widget Manual)</option>
+            <option value="2">2 - Auto Order (Auto Get Link By Loket App)</option>
+            <option value="3">3 - Auto Order (Auto Get Link By IG Story)</option>
+            <option value="4">4 - Auto Order (Auto Get Link By Event Widget)</option>
+          </select>
+        </div>
+        <!-- 2. Captcha -->
+        <div class="form-group">
+          <label><i class="fas fa-shield-alt"></i> Tipe Captcha</label>
+          <select id="s_captcha">
+            <option value="1">Turnstile (CloudFlare)</option>
+            <option value="2">reCAPTCHA v2 (Google)</option>
+          </select>
+        </div>
+        <!-- 3. Data File -->
+        <div class="form-group">
+          <label><i class="fas fa-file-alt"></i> Pilih Data Pembeli</label>
+          <select id="s_datafile">
+            <option value="1">datainput.txt (default)</option>
+          </select>
+          <small>File data pembeli yang sudah diisi di halaman Data Pembeli</small>
+        </div>
+        <!-- 4. Total Tiket -->
+        <div class="form-group">
+          <label><i class="fas fa-ticket-alt"></i> Total Tiket</label>
+          <input type="number" id="s_total" value="1" min="1" placeholder="Jumlah tiket">
+        </div>
+        <!-- 5. Keyword Tiket -->
+        <div class="form-group">
+          <label><i class="fas fa-search"></i> Keyword Tiket</label>
+          <input type="text" id="s_keyword" placeholder="Contoh: VIP, Tribune, Regular">
+          <small>Nama/keyword tiket yang mau dibeli</small>
+        </div>
+        <!-- 6. Keyword Cadangan -->
+        <div class="form-group">
+          <label><i class="fas fa-search-plus"></i> Keyword Cadangan</label>
+          <input type="text" id="s_keyword2" placeholder="Kosongkan jika tidak ada">
+          <small>Keyword alternatif jika tiket utama habis</small>
+        </div>
+        <!-- 7. Kode Undangan -->
+        <div class="form-group">
+          <label><i class="fas fa-envelope-open"></i> Kode Undangan</label>
+          <input type="text" id="s_kode" placeholder="Kosongkan jika tidak ada">
+        </div>
+        <!-- 8. Tampilkan VA -->
+        <div class="form-group">
+          <label><i class="fas fa-credit-card"></i> Tampilkan VA</label>
+          <select id="s_va">
+            <option value="1">Ya</option>
+            <option value="2">Tidak</option>
+          </select>
+        </div>
+        <!-- 9. Link Event -->
+        <div class="form-group">
+          <label><i class="fas fa-link"></i> Link Event</label>
+          <input type="text" id="s_link" placeholder="https://www.loket.com/event/...">
+          <small>URL event dari loket.com</small>
+        </div>
+        <!-- 10. Waktu -->
+        <div class="form-group">
+          <label><i class="fas fa-clock"></i> Waktu Eksekusi</label>
+          <input type="text" id="s_waktu" placeholder="Kosongkan = langsung jalan. Format: HH:MM:SS">
+          <small>Kosongkan untuk langsung jalan. Isi waktu jika mau schedule (contoh: 10:00:00)</small>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-success" style="width:100%;justify-content:center;padding:14px"><i class="fas fa-rocket"></i> JALANKAN BOT</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

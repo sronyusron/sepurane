@@ -104,21 +104,33 @@ async function loadLogs(){
 $('btn-clear-logs').addEventListener('click',async()=>{const r=await api('/api/bot/logs/clear','POST');if(r.success){$('log-container').innerHTML='<p class="log-empty">Log dibersihkan.</p>';showToast(r.message,'success');}});
 $('btn-refresh-logs').addEventListener('click',loadLogs);
 
-// Bot Control - Mode Selection Modal
+// Bot Control - Start Wizard
 const modeModal=$('modal-mode');
 $('btn-start').addEventListener('click',()=>modeModal.classList.remove('hidden'));
 $('close-mode-modal').addEventListener('click',()=>modeModal.classList.add('hidden'));
 modeModal.querySelector('.modal-overlay').addEventListener('click',()=>modeModal.classList.add('hidden'));
 
-document.querySelectorAll('.mode-btn').forEach(btn=>{
-  btn.addEventListener('click',async()=>{
-    const mode=btn.dataset.mode;
-    modeModal.classList.add('hidden');
-    showToast('Memulai bot mode '+mode+'...','info');
-    const r=await api('/api/bot/start','POST',{mode});
-    showToast(r.message,r.success?'success':'error');
-    if(r.success)updateBotUI(true);
-  });
+$('start-bot-form').addEventListener('submit', async(e)=>{
+  e.preventDefault();
+  modeModal.classList.add('hidden');
+
+  const answers = {
+    mode: $('s_mode').value,
+    captcha: $('s_captcha').value,
+    dataFile: $('s_datafile').value,
+    totalTicket: $('s_total').value || '1',
+    keyword: $('s_keyword').value,
+    keywordCadangan: $('s_keyword2').value,
+    kodeUndangan: $('s_kode').value,
+    showVa: $('s_va').value,
+    linkEvent: $('s_link').value,
+    waktu: $('s_waktu').value
+  };
+
+  showToast('Memulai bot...','info');
+  const r = await api('/api/bot/start','POST',{answers});
+  showToast(r.message, r.success?'success':'error');
+  if(r.success) updateBotUI(true);
 });
 
 $('btn-stop').addEventListener('click',async()=>{

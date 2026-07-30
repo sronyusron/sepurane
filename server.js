@@ -113,39 +113,79 @@ app.post('/api/bot/start', (req, res) => {
   }
 
   try {
-    const { mode } = req.body || {};
+    const { answers } = req.body || {};
+    // answers = { mode, captcha, dataFile, totalTicket, keyword, keywordCadangan, kodeUndangan, showVa, linkEvent, waktu }
+    const a = answers || {};
     botLogs = [];
     addLog('Memulai bot...', 'info');
+    addLog(`Mode: ${a.mode || '1'} | Captcha: ${a.captcha || '1'} | Tiket: ${a.totalTicket || '1'}`, 'info');
 
     botProcess = spawn('node', ['loketbot.js'], {
       cwd: __dirname,
-      env: { ...process.env, BOT_MODE: mode || '1' },
+      env: { ...process.env },
       stdio: ['pipe', 'pipe', 'pipe']
     });
 
-    // Auto-answer the inquirer menu selection
-    let menuAnswered = false;
+    // Queue of answers to send sequentially
+    const answerQueue = [];
+    let promptIndex = 0;
+
+    // Build answer queue based on user inputs
+    // 1. Pilih fitur bot (arrow select: 1-4)
+    answerQueue.push({ type: 'arrow', value: parseInt(a.mode) || 1 });
+    // 2. Pilih tipe CAPTCHA (arrow select: 1=Turnstile, 2=reCAPTCHA)
+    answerQueue.push({ type: 'arrow', value: parseInt(a.captcha) || 1 });
+    // 3. Pilih data pembeli (arrow select, biasanya 1)
+    answerQueue.push({ type: 'arrow', value: parseInt(a.dataFile) || 1 });
+    // 4. Total tiket (ketik angka)
+    answerQueue.push({ type: 'text', value: a.totalTicket || '1' });
+    // 5. Keyword tiket (ketik)
+    answerQueue.push({ type: 'text', value: a.keyword || '' });
+    // 6. Keyword cadangan (ketik)
+    answerQueue.push({ type: 'text', value: a.keywordCadangan || '' });
+    // 7. Kode undangan (ketik, bisa kosong)
+    answerQueue.push({ type: 'text', value: a.kodeUndangan || '' });
+    // 8. Tampilkan VA atau tidak (arrow select: 1=Ya, 2=Tidak)
+    answerQueue.push({ type: 'arrow', value: parseInt(a.showVa) || 1 });
+    // 9. Link event (ketik)
+    answerQueue.push({ type: 'text', value: a.linkEvent || '' });
+    // 10. Waktu (enter = langsung, atau ketik waktu)
+    answerQueue.push({ type: 'text', value: a.waktu || '' });
+
+    function sendNextAnswer() {
+      if (promptIndex >= answerQueue.length) return;
+      if (!botProcess || botProcess.killed) return;
+
+      const answer = answerQueue[promptIndex];
+      promptIndex++;
+
+      setTimeout(() => {
+        if (!botProcess || botProcess.killed) return;
+
+        if (answer.type === 'arrow') {
+          // Navigate with arrow down keys, then press enter
+          for (let i = 1; i < answer.value; i++) {
+            botProcess.stdin.write('\x1B[B'); // Arrow Down
+          }
+          botProcess.stdin.write('\r'); // Enter
+        } else {
+          // Type text + enter
+          botProcess.stdin.write(answer.value + '\n');
+        }
+
+        addLog(`[AUTO-INPUT ${promptIndex}] ${answer.value || '(enter)'}`, 'success');
+      }, 800);
+    }
+
     botProcess.stdout.on('data', (data) => {
       const output = data.toString();
       output.split('\n').filter(l => l.trim()).forEach(line => {
         addLog(line, 'info');
       });
 
-      // Detect inquirer menu prompt and auto-select the mode
-      if (!menuAnswered && output.includes('Pilih fiture bot')) {
-        setTimeout(() => {
-          if (botProcess && !botProcess.killed) {
-            // Simulate arrow key navigation + enter for inquirer
-            const modeNum = parseInt(mode) || 1;
-            // Send arrow down keys to navigate (mode 1 = no arrows, mode 2 = 1 down, etc.)
-            for (let i = 1; i < modeNum; i++) {
-              botProcess.stdin.write('\x1B[B'); // Arrow Down
-            }
-            botProcess.stdin.write('\r'); // Enter to confirm
-            menuAnswered = true;
-            addLog(`[AUTO] Memilih fitur: ${mode}`, 'success');
-          }
-        }, 500);
+      // Detect prompts (? or >) and auto-answer
+      if (output.includes('?') || output.includes('Pilih') || output.includes('Masuk') || output.includes('Input') || output.includes('>')) {
+        sendNextAnswer();
       }
     });
 
@@ -165,7 +205,7 @@ app.post('/api/bot/start', (req, res) => {
       botProcess = null;
     });
 
-    res.json({ success: true, message: `Bot dijalankan dengan mode ${mode || '1'}!` });
+    res.json({ success: true, message: 'Bot dijalankan! Mengisi jawaban otomatis...' });
   } catch (e) {
     res.status(500).json({ success: false, message: 'Gagal: ' + e.message });
   }
