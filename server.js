@@ -131,7 +131,7 @@ app.post('/api/bot/start', (req, res) => {
     // type: 'text' = type text + enter
     const answerQueue = [
       { type: 'arrow', value: parseInt(a.mode) || 1, label: 'Fitur bot' },
-      { type: 'arrow', value: parseInt(a.captcha) || 1, label: 'Captcha' },
+      { type: 'checkbox', value: parseInt(a.captcha) || 1, label: 'Captcha' },
       { type: 'checkbox', value: parseInt(a.dataFile) || 1, label: 'Data pembeli' },
       { type: 'text', value: a.totalTicket || '1', label: 'Total tiket' },
       { type: 'text', value: a.keyword || '', label: 'Keyword tiket' },

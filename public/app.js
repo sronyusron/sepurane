@@ -162,7 +162,23 @@ function updateBotUI(running){
   $('dash-status').style.color=running?'var(--success)':'var(--danger)';
 }
 
-setInterval(async()=>{const r=await api('/api/bot/status');if(r.success)updateBotUI(r.running);},5000);
+setInterval(async()=>{
+  const r=await api('/api/bot/status');
+  if(r.success){
+    updateBotUI(r.running);
+    // Auto-refresh logs when bot is running
+    if(r.running && r.logs && r.logs.length){
+      const el=$('dash-log');
+      el.innerHTML=r.logs.slice(-8).map(l=>`<div class="log-line ${l.type==='error'?'error':l.type==='success'?'success':''}">[${l.time}] ${esc(l.msg)}</div>`).join('');
+      // Also update full log if on logs page
+      const logEl=$('log-container');
+      if(!logEl.closest('.section').classList.contains('hidden')){
+        logEl.innerHTML=r.logs.map(l=>`<div class="log-line ${l.type==='error'?'error':l.type==='success'?'success':''}">[${l.time}] ${esc(l.msg)}</div>`).join('');
+        logEl.scrollTop=logEl.scrollHeight;
+      }
+    }
+  }
+},2000); // Poll every 2 seconds
 
 // Init
 loadDashboard();
