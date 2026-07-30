@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sepurane - Loket Bot Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <i class="fas fa-ticket-alt"></i>
+          <span>Sepurane</span>
+        </div>
+        <p class="logo-subtitle">Loket Bot Dashboard</p>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="dashboard">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" data-section="config">
+          <i class="fas fa-cog"></i>
+          <span>Konfigurasi</span>
+        </a>
+        <a href="#" class="nav-item" data-section="datainput">
+          <i class="fas fa-users"></i>
+          <span>Data Pembeli</span>
+        </a>
+        <a href="#" class="nav-item" data-section="cookie">
+          <i class="fas fa-cookie-bite"></i>
+          <span>Cookie</span>
+        </a>
+        <a href="#" class="nav-item" data-section="logs">
+          <i class="fas fa-terminal"></i>
+          <span>Log Bot</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="bot-status-indicator">
+          <span class="status-dot" id="sidebar-status-dot"></span>
+          <span id="sidebar-status-text">Bot Tidak Aktif</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="main-header">
+        <button class="menu-toggle" id="menu-toggle">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1 id="page-title">Dashboard</h1>
+        <div class="header-actions">
+          <button class="btn btn-success" id="btn-start-bot">
+            <i class="fas fa-play"></i> Jalankan Bot
+          </button>
+          <button class="btn btn-danger hidden" id="btn-stop-bot">
+            <i class="fas fa-stop"></i> Hentikan Bot
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <div class="content-area">
+        <!-- Dashboard Section -->
+        <section class="section active" id="section-dashboard">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon blue">
+                <i class="fas fa-robot"></i>
+              </div>
+              <div class="stat-info">
+                <h3>Status Bot</h3>
+                <p class="stat-value" id="dashboard-bot-status">Tidak Aktif</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="stat-info">
+                <h3>Data Pembeli</h3>
+                <p class="stat-value" id="dashboard-buyer-count">0 pembeli</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon purple">
+                <i class="fas fa-cog"></i>
+              </div>
+              <div class="stat-info">
+                <h3>Konfigurasi</h3>
+                <p class="stat-value" id="dashboard-config-status">Belum dikonfigurasi</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon orange">
+                <i class="fas fa-cookie-bite"></i>
+              </div>
+              <div class="stat-info">
+                <h3>Cookie</h3>
+                <p class="stat-value" id="dashboard-cookie-status">Belum diatur</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-panels">
+            <div class="panel">
+              <div class="panel-header">
+                <h3><i class="fas fa-info-circle"></i> Panduan Penggunaan</h3>
+              </div>
+              <div class="panel-body">
+                <div class="guide-steps">
+                  <div class="guide-step">
+                    <span class="step-number">1</span>
+                    <div class="step-content">
+                      <h4>Konfigurasi</h4>
+                      <p>Atur API Key (Capsolver), Telegram Bot Token, dan Chat ID di halaman Konfigurasi.</p>
+                    </div>
+                  </div>
+                  <div class="guide-step">
+                    <span class="step-number">2</span>
+                    <div class="step-content">
+                      <h4>Cookie</h4>
+                      <p>Masukkan cookie dari akun Loket.com Anda di halaman Cookie.</p>
+                    </div>
+                  </div>
+                  <div class="guide-step">
+                    <span class="step-number">3</span>
+                    <div class="step-content">
+                      <h4>Data Pembeli</h4>
+                      <p>Masukkan data pembeli dengan format: nama_depan|nama_belakang|email|no_hp|nik|jenis_kelamin|tanggal_lahir</p>
+                    </div>
+                  </div>
+                  <div class="guide-step">
+                    <span class="step-number">4</span>
+                    <div class="step-content">
+                      <h4>Jalankan Bot</h4>
+                      <p>Klik tombol "Jalankan Bot" dan pantau hasilnya di halaman Log.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h3><i class="fas fa-terminal"></i> Log Terbaru</h3>
+              </div>
+              <div class="panel-body">
+                <div class="mini-log" id="dashboard-mini-log">
+                  <p class="log-empty">Belum ada log. Jalankan bot untuk melihat aktivitas.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Config Section -->
+        <section class="section" id="section-config">
+          <div class="panel">
+            <div class="panel-header">
+              <h3><i class="fas fa-cog"></i> Konfigurasi Bot</h3>
+            </div>
+            <div class="panel-body">
+              <form id="config-form">
+                <div class="form-group">
+                  <label for="api_key">
+                    <i class="fas fa-key"></i> API Key (Capsolver)
+                  </label>
+                  <input type="text" id="api_key" name="api_key" placeholder="Masukkan API Key Capsolver Anda">
+                  <small>API key dari capsolver.com untuk solve captcha</small>
+                </div>
+                <div class="form-group">
+                  <label for="telegram_bot_token">
+                    <i class="fab fa-telegram"></i> Telegram Bot Token
+                  </label>
+                  <input type="text" id="telegram_bot_token" name="telegram_bot_token" placeholder="Masukkan Telegram Bot Token">
+                  <small>Token dari @BotFather di Telegram</small>
+                </div>
+                <div class="form-group">
+                  <label for="telegram_chat_id">
+                    <i class="fas fa-comment-dots"></i> Telegram Chat ID
+                  </label>
+                  <input type="text" id="telegram_chat_id" name="telegram_chat_id" placeholder="Masukkan Chat ID Telegram">
+                  <small>Chat ID untuk menerima notifikasi dari bot</small>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Simpan Konfigurasi
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Data Input Section -->
+        <section class="section" id="section-datainput">
+          <div class="panel">
+            <div class="panel-header">
+              <h3><i class="fas fa-users"></i> Data Pembeli</h3>
+            </div>
+            <div class="panel-body">
+              <div class="format-info">
+                <h4><i class="fas fa-info-circle"></i> Format Data</h4>
+                <p>Masukkan data dengan format (satu baris per pembeli):</p>
+                <code>nama_depan|nama_belakang|email|no_hp|nik|jenis_kelamin(1=L/0=P)|tanggal_lahir(YYYY-MM-DD)</code>
+                <p class="example">Contoh: apri|amsyah|apri@gmail.com|081234567890|1234567890123456|1|2000-04-15</p>
+              </div>
+              <form id="datainput-form">
+                <div class="form-group">
+                  <label for="datainput_textarea">
+                    <i class="fas fa-edit"></i> Data Pembeli
+                  </label>
+                  <textarea id="datainput_textarea" rows="10" placeholder="Masukkan data pembeli di sini..."></textarea>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Simpan Data
+                  </button>
+                  <button type="button" class="btn btn-secondary" id="btn-add-buyer">
+                    <i class="fas fa-plus"></i> Tambah Pembeli
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Add Buyer Modal -->
+          <div class="modal hidden" id="modal-add-buyer">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3>Tambah Data Pembeli</h3>
+                <button class="modal-close" id="modal-close-buyer">&times;</button>
+              </div>
+              <div class="modal-body">
+                <form id="add-buyer-form">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Nama Depan</label>
+                      <input type="text" id="buyer_first_name" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Nama Belakang</label>
+                      <input type="text" id="buyer_last_name" required>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="buyer_email" required>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>No. HP</label>
+                      <input type="text" id="buyer_phone" required>
+                    </div>
+                    <div class="form-group">
+                      <label>NIK</label>
+                      <input type="text" id="buyer_nik" required>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Jenis Kelamin</label>
+                      <select id="buyer_gender">
+                        <option value="1">Laki-laki</option>
+                        <option value="0">Perempuan</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Tanggal Lahir</label>
+                      <input type="date" id="buyer_dob" required>
+                    </div>
+                  </div>
+                  <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-plus"></i> Tambahkan
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Cookie Section -->
+        <section class="section" id="section-cookie">
+          <div class="panel">
+            <div class="panel-header">
+              <h3><i class="fas fa-cookie-bite"></i> Cookie Loket.com</h3>
+            </div>
+            <div class="panel-body">
+              <div class="format-info">
+                <h4><i class="fas fa-info-circle"></i> Cara Mendapatkan Cookie</h4>
+                <p>1. Login ke akun Loket.com Anda di browser</p>
+                <p>2. Buka Developer Tools (F12) > Application > Cookies</p>
+                <p>3. Copy semua cookie dan paste di bawah ini</p>
+              </div>
+              <form id="cookie-form">
+                <div class="form-group">
+                  <label for="cookie_textarea">
+                    <i class="fas fa-edit"></i> Cookie String
+                  </label>
+                  <textarea id="cookie_textarea" rows="8" placeholder="Paste cookie Loket.com Anda di sini..."></textarea>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Simpan Cookie
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Logs Section -->
+        <section class="section" id="section-logs">
+          <div class="panel">
+            <div class="panel-header">
+              <h3><i class="fas fa-terminal"></i> Log Bot</h3>
+              <div class="panel-actions">
+                <button class="btn btn-sm btn-secondary" id="btn-clear-logs">
+                  <i class="fas fa-trash"></i> Bersihkan
+                </button>
+                <button class="btn btn-sm btn-secondary" id="btn-refresh-logs">
+                  <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="log-container" id="log-container">
+                <p class="log-empty">Belum ada log. Jalankan bot untuk melihat aktivitas.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
