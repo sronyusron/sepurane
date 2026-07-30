@@ -293,13 +293,22 @@ app.post('/api/bot/start', (req, res) => {
         const invoiceIdMatch = block.match(/Invoice ID[:\s]*([^\n\r]+)/i);
         const invoiceCodeMatch = block.match(/Invoice Code[:\s]*([^\n\r]+)/i);
         const totalMatch = block.match(/Grand Total[:\s]*([^\n\r]+)/i);
-        const csrfMatch = block.match(/CSRF Token[:\s]*([^\n\r]+)/i);
+        const linkMatch = block.match(/(https?:\/\/[^\s\n\r]+)/gi);
+        
+        // Get the last URL (usually the invoice page URL)
+        let invoiceLink = '';
+        if (linkMatch && linkMatch.length) {
+          // Find loket.com link (invoice/payment page)
+          const loketLink = linkMatch.find(l => l.includes('loket.com'));
+          invoiceLink = loketLink || linkMatch[linkMatch.length - 1];
+        }
         
         let tgMsg = '✅ <b>LOKET ORDER BERHASIL!</b>\n\n';
         tgMsg += '🎉 <i>Browser terbuka di halaman invoice</i>\n\n';
         if (invoiceCodeMatch) tgMsg += `🎫 Invoice Code: <code>${invoiceCodeMatch[1].trim()}</code>\n`;
         if (invoiceIdMatch) tgMsg += `🆔 Invoice ID: <code>${invoiceIdMatch[1].trim()}</code>\n`;
         if (totalMatch) tgMsg += `💰 Total: ${totalMatch[1].trim()}\n`;
+        if (invoiceLink) tgMsg += `\n🔗 <b>Link Invoice:</b>\n${invoiceLink}`;
         
         sendTelegramNotif(tgMsg);
         outputAccumulator = '';
