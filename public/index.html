@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sepurane - Loket Bot Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎫</text></svg>">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <i class="fas fa-ticket-alt"></i>
+          <span>Sepurane</span>
+        </div>
+        <p class="logo-subtitle">Loket Bot Dashboard</p>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="dashboard">
+          <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" data-section="config">
+          <i class="fas fa-cog"></i><span>Konfigurasi</span>
+        </a>
+        <a href="#" class="nav-item" data-section="datainput">
+          <i class="fas fa-users"></i><span>Data Pembeli</span>
+        </a>
+        <a href="#" class="nav-item" data-section="cookie">
+          <i class="fas fa-cookie-bite"></i><span>Cookie</span>
+        </a>
+        <a href="#" class="nav-item" data-section="export">
+          <i class="fas fa-download"></i><span>Export Config</span>
+        </a>
+        <a href="#" class="nav-item" data-section="help">
+          <i class="fas fa-question-circle"></i><span>Bantuan</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="bot-status-indicator">
+          <span class="status-dot"></span>
+          <span>Vercel Dashboard</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="main-header">
+        <button class="menu-toggle" id="menu-toggle"><i class="fas fa-bars"></i></button>
+        <h1 id="page-title">Dashboard</h1>
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-sm" id="btn-import">
+            <i class="fas fa-upload"></i> <span>Import</span>
+          </button>
+          <button class="btn btn-primary btn-sm" id="btn-export-all">
+            <i class="fas fa-download"></i> <span>Export All</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="content-area">
+        <!-- Dashboard -->
+        <section class="section active" id="section-dashboard">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon blue"><i class="fas fa-cog"></i></div>
+              <div class="stat-info"><h3>Konfigurasi</h3><p class="stat-value" id="dash-config-status">Belum diatur</p></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green"><i class="fas fa-users"></i></div>
+              <div class="stat-info"><h3>Data Pembeli</h3><p class="stat-value" id="dash-buyer-count">0 pembeli</p></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon purple"><i class="fas fa-cookie-bite"></i></div>
+              <div class="stat-info"><h3>Cookie</h3><p class="stat-value" id="dash-cookie-status">Belum diatur</p></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon orange"><i class="fas fa-cloud"></i></div>
+              <div class="stat-info"><h3>Platform</h3><p class="stat-value">Vercel</p></div>
+            </div>
+          </div>
+          <div class="dashboard-panels">
+            <div class="panel">
+              <div class="panel-header"><h3><i class="fas fa-info-circle"></i> Panduan</h3></div>
+              <div class="panel-body">
+                <div class="guide-steps">
+                  <div class="guide-step"><span class="step-number">1</span><div class="step-content"><h4>Konfigurasi</h4><p>Atur API Key Capsolver, Telegram Bot Token, dan Chat ID.</p></div></div>
+                  <div class="guide-step"><span class="step-number">2</span><div class="step-content"><h4>Cookie</h4><p>Masukkan cookie dari akun Loket.com Anda.</p></div></div>
+                  <div class="guide-step"><span class="step-number">3</span><div class="step-content"><h4>Data Pembeli</h4><p>Input data pembeli tiket.</p></div></div>
+                  <div class="guide-step"><span class="step-number">4</span><div class="step-content"><h4>Export & Jalankan</h4><p>Export config, lalu jalankan bot di PC/VPS.</p></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-header"><h3><i class="fas fa-rocket"></i> Cara Kerja</h3></div>
+              <div class="panel-body">
+                <div class="info-box">
+                  <p>Dashboard ini untuk mengatur konfigurasi bot secara online.</p><br>
+                  <p>Semua data disimpan di <strong>localStorage browser</strong> dan bisa di-export sebagai file.</p><br>
+                  <p><strong>Alur:</strong></p>
+                  <ol>
+                    <li>Atur konfigurasi di dashboard</li>
+                    <li>Klik <strong>Export</strong> untuk download file</li>
+                    <li>Letakkan file di folder bot</li>
+                    <li>Jalankan <code>node loketbot.js</code></li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Config -->
+        <section class="section" id="section-config">
+          <div class="panel">
+            <div class="panel-header"><h3><i class="fas fa-cog"></i> Konfigurasi Bot</h3></div>
+            <div class="panel-body">
+              <form id="config-form">
+                <div class="form-group">
+                  <label><i class="fas fa-key"></i> API Key (Capsolver)</label>
+                  <input type="text" id="api_key" placeholder="Masukkan API Key Capsolver">
+                  <small>API key dari capsolver.com untuk solve captcha</small>
+                </div>
+                <div class="form-group">
+                  <label><i class="fab fa-telegram"></i> Telegram Bot Token</label>
+                  <input type="text" id="telegram_bot_token" placeholder="Masukkan Telegram Bot Token">
+                  <small>Token dari @BotFather</small>
+                </div>
+                <div class="form-group">
+                  <label><i class="fas fa-comment-dots"></i> Telegram Chat ID</label>
+                  <input type="text" id="telegram_chat_id" placeholder="Masukkan Chat ID Telegram">
+                  <small>Chat ID untuk notifikasi bot</small>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
+                  <button type="button" class="btn btn-secondary" id="btn-reset-config"><i class="fas fa-undo"></i> Reset</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Data Input -->
+        <section class="section" id="section-datainput">
+          <div class="panel">
+            <div class="panel-header">
+              <h3><i class="fas fa-users"></i> Data Pembeli</h3>
+              <button class="btn btn-sm btn-primary" id="btn-add-buyer"><i class="fas fa-plus"></i> Tambah</button>
+            </div>
+            <div class="panel-body">
+              <div class="format-info">
+                <h4><i class="fas fa-info-circle"></i> Format Data</h4>
+                <p>Satu baris per pembeli:</p>
+                <code>nama_depan|nama_belakang|email|no_hp|nik|jenis_kelamin(1=L/0=P)|tanggal_lahir(YYYY-MM-DD)</code>
+                <p class="example">Contoh: apri|amsyah|apri@gmail.com|081234567890|1234567890123456|1|2000-04-15</p>
+              </div>
+              <form id="datainput-form">
+                <div class="form-group">
+                  <label><i class="fas fa-edit"></i> Data Pembeli</label>
+                  <textarea id="datainput_textarea" rows="8" placeholder="Masukkan data pembeli..."></textarea>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
+                  <button type="button" class="btn btn-secondary" id="btn-clear-buyers"><i class="fas fa-trash"></i> Hapus Semua</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="panel" style="margin-top:20px">
+            <div class="panel-header"><h3><i class="fas fa-table"></i> Preview Data</h3></div>
+            <div class="panel-body">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead><tr><th>#</th><th>Nama</th><th>Email</th><th>HP</th><th>NIK</th><th>JK</th><th>Tgl Lahir</th><th></th></tr></thead>
+                  <tbody id="buyer-table-body">
+                    <tr><td colspan="8" class="text-center text-muted">Belum ada data</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- Modal -->
+          <div class="modal hidden" id="modal-add-buyer">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+              <div class="modal-header"><h3>Tambah Pembeli</h3><button class="modal-close" id="modal-close-buyer">&times;</button></div>
+              <div class="modal-body">
+                <form id="add-buyer-form">
+                  <div class="form-row">
+                    <div class="form-group"><label>Nama Depan</label><input type="text" id="buyer_first_name" required></div>
+                    <div class="form-group"><label>Nama Belakang</label><input type="text" id="buyer_last_name" required></div>
+                  </div>
+                  <div class="form-group"><label>Email</label><input type="email" id="buyer_email" required></div>
+                  <div class="form-row">
+                    <div class="form-group"><label>No. HP</label><input type="text" id="buyer_phone" required></div>
+                    <div class="form-group"><label>NIK</label><input type="text" id="buyer_nik" required></div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group"><label>Jenis Kelamin</label><select id="buyer_gender"><option value="1">Laki-laki</option><option value="0">Perempuan</option></select></div>
+                    <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="buyer_dob" required></div>
+                  </div>
+                  <div class="form-actions"><button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Tambahkan</button></div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Cookie -->
+        <section class="section" id="section-cookie">
+          <div class="panel">
+            <div class="panel-header"><h3><i class="fas fa-cookie-bite"></i> Cookie Loket.com</h3></div>
+            <div class="panel-body">
+              <div class="format-info">
+                <h4><i class="fas fa-info-circle"></i> Cara Mendapatkan Cookie</h4>
+                <p>1. Login ke Loket.com di browser</p>
+                <p>2. Buka DevTools (F12) &gt; Application &gt; Cookies</p>
+                <p>3. Copy semua cookie dan paste di bawah</p>
+              </div>
+              <form id="cookie-form">
+                <div class="form-group">
+                  <label><i class="fas fa-edit"></i> Cookie String</label>
+                  <textarea id="cookie_textarea" rows="8" placeholder="Paste cookie Loket.com..."></textarea>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
+                  <button type="button" class="btn btn-secondary" id="btn-clear-cookie"><i class="fas fa-trash"></i> Hapus</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Export -->
+        <section class="section" id="section-export">
+          <div class="panel">
+            <div class="panel-header"><h3><i class="fas fa-download"></i> Export Konfigurasi</h3></div>
+            <div class="panel-body">
+              <div class="format-info">
+                <h4><i class="fas fa-info-circle"></i> Cara Menggunakan</h4>
+                <p>1. Download file config di bawah</p>
+                <p>2. Letakkan di folder yang sama dengan <code>loketbot.js</code></p>
+                <p>3. Jalankan: <code>node loketbot.js</code></p>
+              </div>
+              <div class="export-grid">
+                <div class="export-card">
+                  <div class="export-icon"><i class="fas fa-file-code"></i></div>
+                  <div class="export-info"><h4>configloket.json</h4><p>Konfigurasi utama bot</p></div>
+                  <button class="btn btn-sm btn-primary" id="btn-dl-config"><i class="fas fa-download"></i></button>
+                </div>
+                <div class="export-card">
+                  <div class="export-icon"><i class="fas fa-file-alt"></i></div>
+                  <div class="export-info"><h4>datainput.txt</h4><p>Data pembeli tiket</p></div>
+                  <button class="btn btn-sm btn-primary" id="btn-dl-data"><i class="fas fa-download"></i></button>
+                </div>
+                <div class="export-card">
+                  <div class="export-icon"><i class="fas fa-file"></i></div>
+                  <div class="export-info"><h4>cookieLoket.txt</h4><p>Cookie Loket.com</p></div>
+                  <button class="btn btn-sm btn-primary" id="btn-dl-cookie"><i class="fas fa-download"></i></button>
+                </div>
+                <div class="export-card highlight">
+                  <div class="export-icon"><i class="fas fa-file-archive"></i></div>
+                  <div class="export-info"><h4>Semua File</h4><p>Download semua sekaligus</p></div>
+                  <button class="btn btn-sm btn-success" id="btn-dl-all"><i class="fas fa-download"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Help -->
+        <section class="section" id="section-help">
+          <div class="panel">
+            <div class="panel-header"><h3><i class="fas fa-question-circle"></i> Bantuan</h3></div>
+            <div class="panel-body">
+              <div class="faq-list">
+                <div class="faq-item"><h4><i class="fas fa-chevron-right"></i> Apa itu Sepurane?</h4><p>Bot otomatis untuk membeli tiket di Loket.com. Dashboard ini membantu mengatur konfigurasi bot.</p></div>
+                <div class="faq-item"><h4><i class="fas fa-chevron-right"></i> Apakah data saya aman?</h4><p>Semua data disimpan di localStorage browser. Tidak ada data yang dikirim ke server manapun.</p></div>
+                <div class="faq-item"><h4><i class="fas fa-chevron-right"></i> Cara menjalankan bot?</h4><p>Export config, lalu jalankan di PC/VPS dengan <code>node loketbot.js</code>.</p></div>
+                <div class="faq-item"><h4><i class="fas fa-chevron-right"></i> Kenapa bot tidak jalan di Vercel?</h4><p>Vercel untuk website statis. Bot butuh proses berjalan terus, jadi harus di PC/VPS.</p></div>
+                <div class="faq-item"><h4><i class="fas fa-chevron-right"></i> Apa yang dibutuhkan?</h4><p>Node.js v16+, npm, koneksi internet. Install deps: <code>npm install</code>, lalu jalankan bot.</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Import Modal -->
+  <div class="modal hidden" id="modal-import">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header"><h3>Import Konfigurasi</h3><button class="modal-close" id="modal-close-import">&times;</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label>Tipe File</label>
+          <select id="import-type">
+            <option value="config">configloket.json</option>
+            <option value="datainput">datainput.txt</option>
+            <option value="cookie">cookieLoket.txt</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Pilih File</label><input type="file" id="import-file" accept=".json,.txt"></div>
+        <div class="form-actions"><button class="btn btn-primary" id="btn-do-import"><i class="fas fa-upload"></i> Import</button></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
