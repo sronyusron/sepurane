@@ -125,69 +125,54 @@ app.post('/api/bot/start', (req, res) => {
       stdio: ['pipe', 'pipe', 'pipe']
     });
 
-    // Answer queue - each item has type and value
-    // type: 'arrow' = navigate with arrow down + enter
-    // type: 'checkbox' = space to select + enter
-    // type: 'text' = type text + enter
+    // Simple sequential approach: send answers with fixed delays
+    // No prompt detection needed - just send answers one by one with enough delay
     const answerQueue = [
-      { type: 'arrow', value: parseInt(a.mode) || 1, label: 'Fitur bot' },
-      { type: 'checkbox', value: parseInt(a.captcha) || 1, label: 'Captcha' },
-      { type: 'checkbox', value: parseInt(a.dataFile) || 1, label: 'Data pembeli' },
-      { type: 'text', value: a.totalTicket || '1', label: 'Total tiket' },
-      { type: 'text', value: a.keyword || '', label: 'Keyword tiket' },
-      { type: 'text', value: a.keywordCadangan || '', label: 'Keyword cadangan' },
-      { type: 'text', value: a.kodeUndangan || '', label: 'Kode undangan' },
-      { type: 'arrow', value: parseInt(a.showVa) || 1, label: 'Tampilkan VA' },
+      { type: 'arrow', value: parseInt(a.mode) || 1, label: 'Fitur bot', delay: 2000 },
+      { type: 'checkbox', value: parseInt(a.captcha) || 1, label: 'Captcha', delay: 2000 },
+      { type: 'checkbox', value: parseInt(a.dataFile) || 1, label: 'Data pembeli', delay: 2000 },
+      { type: 'text', value: a.totalTicket || '1', label: 'Total tiket', delay: 1500 },
+      { type: 'text', value: a.keyword || '', label: 'Keyword tiket', delay: 1500 },
+      { type: 'text', value: a.keywordCadangan || '', label: 'Keyword cadangan', delay: 1500 },
+      { type: 'text', value: a.kodeUndangan || '', label: 'Kode undangan', delay: 1500 },
+      { type: 'arrow', value: parseInt(a.showVa) || 1, label: 'Tampilkan VA', delay: 2000 },
     ];
 
     // Mode-specific prompts (after VA selection)
     const mode = parseInt(a.mode) || 1;
     if (mode === 2) {
-      // Mode 2: domain + clue + day
-      answerQueue.push({ type: 'text', value: a.domain || '', label: 'Domain' });
-      answerQueue.push({ type: 'text', value: a.clue || '', label: 'Clue' });
-      answerQueue.push({ type: 'text', value: a.day || '', label: 'Day' });
+      answerQueue.push({ type: 'text', value: a.domain || '', label: 'Domain', delay: 1500 });
+      answerQueue.push({ type: 'text', value: a.clue || '', label: 'Clue', delay: 1500 });
+      answerQueue.push({ type: 'text', value: a.day || '', label: 'Day', delay: 1500 });
     } else {
-      // Mode 1/3/4: link event/widget
-      answerQueue.push({ type: 'text', value: a.linkEvent || '', label: 'Link event/widget' });
+      answerQueue.push({ type: 'text', value: a.linkEvent || '', label: 'Link event/widget', delay: 1500 });
     }
+    answerQueue.push({ type: 'text', value: a.waktu || '', label: 'Waktu', delay: 1500 });
+    answerQueue.push({ type: 'text', value: a.captchaBefore || '10', label: 'Captcha detik sebelum', delay: 1500 });
 
-    // Waktu (all modes)
-    answerQueue.push({ type: 'text', value: a.waktu || '', label: 'Waktu' });
-    // Solve captcha seconds before target (all modes)
-    answerQueue.push({ type: 'text', value: a.captchaBefore || '10', label: 'Captcha detik sebelum' });
-
-    let promptIndex = 0;
-    let answerTimeout = null;
-
-    function sendNextAnswer() {
-      if (promptIndex >= answerQueue.length) return;
-      if (!botProcess || botProcess.killed) return;
-
-      // Clear any pending timeout
-      if (answerTimeout) clearTimeout(answerTimeout);
-
-      const answer = answerQueue[promptIndex];
-      promptIndex++;
-
-      // Delay before sending to let inquirer fully render
-      answerTimeout = setTimeout(() => {
+    // Send all answers sequentially with delays
+    let totalDelay = 3000; // Initial wait for bot to start and show first prompt
+    
+    answerQueue.forEach((answer, idx) => {
+      setTimeout(() => {
         if (!botProcess || botProcess.killed) return;
 
         if (answer.type === 'arrow') {
+          // Arrow down to navigate, then enter
           for (let i = 1; i < answer.value; i++) {
-            botProcess.stdin.write('\x1B[B'); // Arrow Down
+            botProcess.stdin.write('\x1B[B');
           }
           setTimeout(() => {
             if (botProcess && !botProcess.killed) botProcess.stdin.write('\r');
           }, 150);
         } else if (answer.type === 'checkbox') {
+          // Arrow down to navigate, space to select, then enter
           for (let i = 1; i < answer.value; i++) {
             botProcess.stdin.write('\x1B[B');
           }
           setTimeout(() => {
             if (!botProcess || botProcess.killed) return;
-            botProcess.stdin.write(' '); // Space to toggle
+            botProcess.stdin.write(' ');
             setTimeout(() => {
               if (botProcess && !botProcess.killed) botProcess.stdin.write('\r');
             }, 150);
@@ -196,45 +181,18 @@ app.post('/api/bot/start', (req, res) => {
           botProcess.stdin.write(answer.value + '\n');
         }
 
-        addLog(`[AUTO-INPUT ${promptIndex}/${answerQueue.length}] ${answer.label}: ${answer.value || '(enter)'}`, 'success');
-      }, 600);
-    }
+        addLog(`[AUTO-INPUT ${idx+1}/${answerQueue.length}] ${answer.label}: ${answer.value || '(enter)'}`, 'success');
+      }, totalDelay);
+      
+      totalDelay += answer.delay;
+    });
 
-    // Track which prompts we've seen to avoid double-firing
-    let lastPromptSeen = '';
-    let dataBuffer = '';
-    let bufferTimer = null;
-
+    // Simple stdout/stderr logging
     botProcess.stdout.on('data', (data) => {
-      const output = data.toString();
-      
-      // Log cleaned lines
-      const cleanOutput = output.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
-      cleanOutput.split('\n').filter(l => l.trim()).forEach(line => {
-        if (line.trim()) addLog(line.trim(), 'info');
+      const clean = data.toString().replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
+      clean.split('\n').filter(l => l.trim()).forEach(line => {
+        addLog(line.trim(), 'info');
       });
-
-      // Accumulate in buffer
-      dataBuffer += output;
-      
-      // Debounce: wait 1 second of silence before checking for prompt
-      if (bufferTimer) clearTimeout(bufferTimer);
-      bufferTimer = setTimeout(() => {
-        const cleanBuf = dataBuffer.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
-        
-        // Look for a question mark prompt that we haven't answered yet
-        const promptMatch = cleanBuf.match(/\?\s+([^\n:]+)/);
-        if (promptMatch) {
-          const promptText = promptMatch[1].trim();
-          // Only answer if this is a NEW prompt (not the same one re-rendering)
-          if (promptText !== lastPromptSeen) {
-            lastPromptSeen = promptText;
-            sendNextAnswer();
-          }
-        }
-        
-        dataBuffer = ''; // Clear buffer
-      }, 1000);
     });
 
     botProcess.stderr.on('data', (data) => {
