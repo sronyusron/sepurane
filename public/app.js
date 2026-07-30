@@ -108,7 +108,7 @@ $('btn-refresh-logs').addEventListener('click',loadLogs);
 const modeModal=$('modal-mode');
 $('btn-start').addEventListener('click', async()=>{
   modeModal.classList.remove('hidden');
-  // Load buyer data into checklist
+  // Load buyer data into radio list
   const r = await api('/api/datainput');
   const listEl = $('s_buyers_list');
   if(r.success && r.data) {
@@ -119,7 +119,7 @@ $('btn-start').addEventListener('click', async()=>{
         const name = `${parts[0]||''} ${parts[1]||''}`.trim();
         const email = parts[2]||'';
         return `<div class="buyer-check-item">
-          <input type="checkbox" id="buyer_chk_${i}" value="${i+1}" checked>
+          <input type="radio" name="buyer_select" id="buyer_chk_${i}" value="${i+1}" ${i===0?'checked':''}>
           <label for="buyer_chk_${i}"><strong>${name}</strong> - ${email}</label>
         </div>`;
       }).join('');
@@ -143,23 +143,20 @@ $('s_mode').addEventListener('change', ()=>{
 $('start-bot-form').addEventListener('submit', async(e)=>{
   e.preventDefault();
   
-  // Get selected buyers (checkbox indices)
-  const selectedBuyers = [];
-  document.querySelectorAll('#s_buyers_list input[type="checkbox"]:checked').forEach(chk => {
-    selectedBuyers.push(parseInt(chk.value));
-  });
-
-  if(selectedBuyers.length === 0) {
-    showToast('Pilih minimal 1 data pembeli!', 'error');
+  // Get selected buyer (single radio)
+  const selectedRadio = document.querySelector('#s_buyers_list input[type="radio"]:checked');
+  if(!selectedRadio) {
+    showToast('Pilih 1 data pembeli!', 'error');
     return;
   }
+  const selectedBuyer = parseInt(selectedRadio.value);
 
   modeModal.classList.add('hidden');
 
   const answers = {
     mode: $('s_mode').value,
     captcha: $('s_captcha').value,
-    selectedBuyers: selectedBuyers, // Array of 1-based indices
+    selectedBuyer: selectedBuyer, // 1-based index of selected buyer
     totalTicket: $('s_total').value || '1',
     keyword: $('s_keyword').value,
     keywordCadangan: $('s_keyword2').value,

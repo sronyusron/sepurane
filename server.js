@@ -24,6 +24,34 @@ function addLog(msg, type = 'info') {
   if (botLogs.length > MAX_LOGS) botLogs.shift();
 }
 
+// --- Telegram Notification ---
+async function sendTelegramNotif(message) {
+  try {
+    const configRaw = fs.readFileSync(path.join(__dirname, 'configloket.json'), 'utf8');
+    const config = JSON.parse(configRaw);
+    const cfg = Array.isArray(config) ? config[0] : config;
+    
+    if (!cfg.telegram_bot_token || !cfg.telegram_chat_id) return;
+    
+    const url = `https://api.telegram.org/bot${cfg.telegram_bot_token}/sendMessage`;
+    const fetch = require('node-fetch');
+    
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: cfg.telegram_chat_id,
+        text: message,
+        parse_mode: 'HTML'
+      })
+    });
+    
+    addLog('[TELEGRAM] Notifikasi berhasil dikirim!', 'success');
+  } catch (err) {
+    addLog('[TELEGRAM] Gagal kirim notif: ' + err.message, 'error');
+  }
+}
+
 // --- Config API ---
 app.get('/api/config', (req, res) => {
   try {
@@ -126,12 +154,12 @@ app.post('/api/bot/start', (req, res) => {
     });
 
     // Simple sequential approach: send answers with fixed delays
-    const selectedBuyers = a.selectedBuyers || [1]; // Array of 1-based indices
+    const selectedBuyer = parseInt(a.selectedBuyer) || 1; // 1-based index
     
     const answerQueue = [
       { type: 'arrow', value: parseInt(a.mode) || 1, label: 'Fitur bot', delay: 2000 },
       { type: 'checkbox', value: parseInt(a.captcha) || 1, label: 'Captcha', delay: 2000 },
-      { type: 'multicheck', values: selectedBuyers, total: selectedBuyers.length, label: 'Data pembeli', delay: 2500 },
+      { type: 'checkbox', value: selectedBuyer, label: 'Data pembeli', delay: 2500 },
       { type: 'text', value: a.totalTicket || '1', label: 'Total tiket', delay: 1500 },
       { type: 'text', value: a.keyword || '', label: 'Keyword tiket', delay: 1500 },
       { type: 'text', value: a.keywordCadangan || '', label: 'Keyword cadangan', delay: 1500 },
@@ -217,12 +245,53 @@ app.post('/api/bot/start', (req, res) => {
       totalDelay += answer.delay;
     });
 
-    // Simple stdout/stderr logging
+    // Simple stdout/stderr logging + payment detection
+    let outputAccumulator = '';
+    
     botProcess.stdout.on('data', (data) => {
       const clean = data.toString().replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
       clean.split('\n').filter(l => l.trim()).forEach(line => {
         addLog(line.trim(), 'info');
       });
+      
+      // Accumulate output to detect payment success
+      outputAccumulator += clean;
+      
+      // Detect payment success pattern
+      if (outputAccumulator.includes('PAYMENT BERHASIL') || outputAccumulator.includes('BERHASIL')) {
+        // Extract payment info from accumulated output
+        const paymentBlock = outputAccumulator;
+        
+        // Parse payment details
+        const widgetMatch = paymentBlock.match(/Widget Code[:\s]*([^\n\r]+)/i);
+        const paymentMatch = paymentBlock.match(/Payment[:\s]*([^\n\r]+)/i);
+        const emailMatch = paymentBlock.match(/Email[:\s]*([^\n\r]+)/i);
+        const ticketMatch = paymentBlock.match(/Type Ticket[:\s]*([^\n\r]+)/i);
+        const namaMatch = paymentBlock.match(/Nama[:\s]*([^\n\r]+)/i);
+        const linkMatch = paymentBlock.match(/(https?:\/\/[^\s\n\r]+)/i);
+        
+        // Build Telegram message
+        let tgMsg = '✅ <b>LOKET PAYMENT BERHASIL!</b>\n\n';
+        if (widgetMatch) tgMsg += `🎫 Widget Code: <code>${widgetMatch[1].trim()}</code>\n`;
+        if (paymentMatch) tgMsg += `💳 Payment: <code>${paymentMatch[1].trim()}</code>\n`;
+        if (emailMatch) tgMsg += `📧 Email: ${emailMatch[1].trim()}\n`;
+        if (ticketMatch) tgMsg += `🎟 Tiket: ${ticketMatch[1].trim()}\n`;
+        if (namaMatch) tgMsg += `👤 Nama: ${namaMatch[1].trim()}\n`;
+        if (linkMatch) tgMsg += `\n🔗 <b>Link Payment:</b>\n${linkMatch[1].trim()}`;
+        
+        if (!linkMatch && !widgetMatch) {
+          // Fallback: send raw success block
+          tgMsg += '\n' + paymentBlock.substring(paymentBlock.lastIndexOf('BERHASIL') - 50, paymentBlock.lastIndexOf('BERHASIL') + 500).trim();
+        }
+        
+        sendTelegramNotif(tgMsg);
+        outputAccumulator = ''; // Reset after sending
+      }
+      
+      // Keep accumulator manageable (max 5000 chars)
+      if (outputAccumulator.length > 5000) {
+        outputAccumulator = outputAccumulator.slice(-2000);
+      }
     });
 
     botProcess.stderr.on('data', (data) => {
