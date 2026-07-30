@@ -158,92 +158,83 @@ app.post('/api/bot/start', (req, res) => {
     answerQueue.push({ type: 'text', value: a.captchaBefore || '10', label: 'Captcha detik sebelum' });
 
     let promptIndex = 0;
-    let lastAnswerTime = 0;
-    const DEBOUNCE_MS = 1500; // Wait at least 1.5s between answers
+    let answerTimeout = null;
 
     function sendNextAnswer() {
-      const now = Date.now();
-      if (now - lastAnswerTime < DEBOUNCE_MS) return; // Debounce
       if (promptIndex >= answerQueue.length) return;
       if (!botProcess || botProcess.killed) return;
 
+      // Clear any pending timeout
+      if (answerTimeout) clearTimeout(answerTimeout);
+
       const answer = answerQueue[promptIndex];
       promptIndex++;
-      lastAnswerTime = now;
 
-      setTimeout(() => {
+      // Delay before sending to let inquirer fully render
+      answerTimeout = setTimeout(() => {
         if (!botProcess || botProcess.killed) return;
 
         if (answer.type === 'arrow') {
-          // Navigate with arrow down, then enter
           for (let i = 1; i < answer.value; i++) {
             botProcess.stdin.write('\x1B[B'); // Arrow Down
           }
           setTimeout(() => {
             if (botProcess && !botProcess.killed) botProcess.stdin.write('\r');
-          }, 200);
+          }, 150);
         } else if (answer.type === 'checkbox') {
-          // Space to select item, then enter to proceed
-          // Navigate to the right item first
           for (let i = 1; i < answer.value; i++) {
-            botProcess.stdin.write('\x1B[B'); // Arrow Down
+            botProcess.stdin.write('\x1B[B');
           }
           setTimeout(() => {
             if (!botProcess || botProcess.killed) return;
-            botProcess.stdin.write(' '); // Space to toggle selection
+            botProcess.stdin.write(' '); // Space to toggle
             setTimeout(() => {
-              if (botProcess && !botProcess.killed) botProcess.stdin.write('\r'); // Enter to proceed
-            }, 200);
-          }, 200);
+              if (botProcess && !botProcess.killed) botProcess.stdin.write('\r');
+            }, 150);
+          }, 150);
         } else {
-          // Type text + enter
           botProcess.stdin.write(answer.value + '\n');
         }
 
         addLog(`[AUTO-INPUT ${promptIndex}/${answerQueue.length}] ${answer.label}: ${answer.value || '(enter)'}`, 'success');
-      }, 300);
+      }, 600);
     }
 
-    // Accumulate output to detect full prompt lines
-    let outputBuffer = '';
-    let promptDetectTimer = null;
+    // Track which prompts we've seen to avoid double-firing
+    let lastPromptSeen = '';
+    let dataBuffer = '';
+    let bufferTimer = null;
 
     botProcess.stdout.on('data', (data) => {
       const output = data.toString();
       
-      // Log each line
-      output.split('\n').filter(l => l.trim()).forEach(line => {
-        // Clean ANSI escape codes for display
-        const clean = line.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '').trim();
-        if (clean) addLog(clean, 'info');
+      // Log cleaned lines
+      const cleanOutput = output.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
+      cleanOutput.split('\n').filter(l => l.trim()).forEach(line => {
+        if (line.trim()) addLog(line.trim(), 'info');
       });
 
-      // Buffer output and detect prompts with debounce
-      outputBuffer += output;
+      // Accumulate in buffer
+      dataBuffer += output;
       
-      if (promptDetectTimer) clearTimeout(promptDetectTimer);
-      promptDetectTimer = setTimeout(() => {
-        // Check if buffer contains a prompt indicator
-        const hasPrompt = outputBuffer.includes('?') && (
-          outputBuffer.includes('Pilih') ||
-          outputBuffer.includes('Masukkan') ||
-          outputBuffer.includes('Use arrow') ||
-          outputBuffer.includes('Press <space>') ||
-          outputBuffer.includes('(Optional)') ||
-          outputBuffer.includes('link event') ||
-          outputBuffer.includes('Total Ticket') ||
-          outputBuffer.includes('keyword') ||
-          outputBuffer.includes('Kode Undangan') ||
-          outputBuffer.includes('mode:') ||
-          outputBuffer.includes('waktu') ||
-          outputBuffer.includes('Kapan')
-        );
-
-        if (hasPrompt) {
-          sendNextAnswer();
-          outputBuffer = ''; // Clear buffer after answering
+      // Debounce: wait 1 second of silence before checking for prompt
+      if (bufferTimer) clearTimeout(bufferTimer);
+      bufferTimer = setTimeout(() => {
+        const cleanBuf = dataBuffer.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
+        
+        // Look for a question mark prompt that we haven't answered yet
+        const promptMatch = cleanBuf.match(/\?\s+([^\n:]+)/);
+        if (promptMatch) {
+          const promptText = promptMatch[1].trim();
+          // Only answer if this is a NEW prompt (not the same one re-rendering)
+          if (promptText !== lastPromptSeen) {
+            lastPromptSeen = promptText;
+            sendNextAnswer();
+          }
         }
-      }, 800); // Wait 800ms after last data before detecting prompt
+        
+        dataBuffer = ''; // Clear buffer
+      }, 1000);
     });
 
     botProcess.stderr.on('data', (data) => {
