@@ -106,14 +106,34 @@ $('btn-refresh-logs').addEventListener('click',loadLogs);
 
 // Bot Control - Start Wizard
 const modeModal=$('modal-mode');
-$('btn-start').addEventListener('click',()=>modeModal.classList.remove('hidden'));
+$('btn-start').addEventListener('click', async()=>{
+  modeModal.classList.remove('hidden');
+  // Load buyer data into checklist
+  const r = await api('/api/datainput');
+  const listEl = $('s_buyers_list');
+  if(r.success && r.data) {
+    const lines = r.data.split('\n').filter(l=>l.trim());
+    if(lines.length) {
+      listEl.innerHTML = lines.map((line, i) => {
+        const parts = line.split('|');
+        const name = `${parts[0]||''} ${parts[1]||''}`.trim();
+        const email = parts[2]||'';
+        return `<div class="buyer-check-item">
+          <input type="checkbox" id="buyer_chk_${i}" value="${i+1}" checked>
+          <label for="buyer_chk_${i}"><strong>${name}</strong> - ${email}</label>
+        </div>`;
+      }).join('');
+    } else {
+      listEl.innerHTML = '<p class="text-muted" style="font-size:0.8rem;padding:12px;">Belum ada data pembeli. Tambahkan di halaman Data Pembeli.</p>';
+    }
+  }
+});
 $('close-mode-modal').addEventListener('click',()=>modeModal.classList.add('hidden'));
 modeModal.querySelector('.modal-overlay').addEventListener('click',()=>modeModal.classList.add('hidden'));
 
 // Show/hide fields based on mode
 $('s_mode').addEventListener('change', ()=>{
   const mode = $('s_mode').value;
-  // Mode 2: show domain/clue/day, hide link
   $('fg-link').classList.toggle('hidden', mode==='2');
   $('fg-domain').classList.toggle('hidden', mode!=='2');
   $('fg-clue').classList.toggle('hidden', mode!=='2');
@@ -122,12 +142,24 @@ $('s_mode').addEventListener('change', ()=>{
 
 $('start-bot-form').addEventListener('submit', async(e)=>{
   e.preventDefault();
+  
+  // Get selected buyers (checkbox indices)
+  const selectedBuyers = [];
+  document.querySelectorAll('#s_buyers_list input[type="checkbox"]:checked').forEach(chk => {
+    selectedBuyers.push(parseInt(chk.value));
+  });
+
+  if(selectedBuyers.length === 0) {
+    showToast('Pilih minimal 1 data pembeli!', 'error');
+    return;
+  }
+
   modeModal.classList.add('hidden');
 
   const answers = {
     mode: $('s_mode').value,
     captcha: $('s_captcha').value,
-    dataFile: $('s_datafile').value,
+    selectedBuyers: selectedBuyers, // Array of 1-based indices
     totalTicket: $('s_total').value || '1',
     keyword: $('s_keyword').value,
     keywordCadangan: $('s_keyword2').value,

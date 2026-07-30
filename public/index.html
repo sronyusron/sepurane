@@ -119,13 +119,13 @@
             <option value="2">reCAPTCHA v2 (Google)</option>
           </select>
         </div>
-        <!-- 3. Data File -->
+        <!-- 3. Pilih Data Pembeli (multi-select) -->
         <div class="form-group">
-          <label><i class="fas fa-file-alt"></i> Pilih Data Pembeli</label>
-          <select id="s_datafile">
-            <option value="1">datainput.txt (default)</option>
-          </select>
-          <small>File data pembeli yang sudah diisi di halaman Data Pembeli</small>
+          <label><i class="fas fa-user-check"></i> Pilih Data Pembeli</label>
+          <div class="buyer-checklist" id="s_buyers_list">
+            <p class="text-muted" style="font-size:0.8rem;padding:12px;">Memuat data pembeli...</p>
+          </div>
+          <small>Centang pembeli yang ingin digunakan. Data dari halaman Data Pembeli.</small>
         </div>
         <!-- 4. Total Tiket -->
         <div class="form-group">

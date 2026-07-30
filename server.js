@@ -126,11 +126,12 @@ app.post('/api/bot/start', (req, res) => {
     });
 
     // Simple sequential approach: send answers with fixed delays
-    // No prompt detection needed - just send answers one by one with enough delay
+    const selectedBuyers = a.selectedBuyers || [1]; // Array of 1-based indices
+    
     const answerQueue = [
       { type: 'arrow', value: parseInt(a.mode) || 1, label: 'Fitur bot', delay: 2000 },
       { type: 'checkbox', value: parseInt(a.captcha) || 1, label: 'Captcha', delay: 2000 },
-      { type: 'checkbox', value: parseInt(a.dataFile) || 1, label: 'Data pembeli', delay: 2000 },
+      { type: 'multicheck', values: selectedBuyers, total: selectedBuyers.length, label: 'Data pembeli', delay: 2500 },
       { type: 'text', value: a.totalTicket || '1', label: 'Total tiket', delay: 1500 },
       { type: 'text', value: a.keyword || '', label: 'Keyword tiket', delay: 1500 },
       { type: 'text', value: a.keywordCadangan || '', label: 'Keyword cadangan', delay: 1500 },
@@ -177,7 +178,36 @@ app.post('/api/bot/start', (req, res) => {
               if (botProcess && !botProcess.killed) botProcess.stdin.write('\r');
             }, 150);
           }, 150);
+        } else if (answer.type === 'multicheck') {
+          // Multi-select: navigate and space each selected item, then enter
+          // Items are 1-based indices. We start at position 1 (top).
+          const sorted = answer.values.slice().sort((a,b) => a-b);
+          let currentPos = 1;
+          let stepDelay = 0;
+          
+          sorted.forEach((itemIdx) => {
+            const stepsDown = itemIdx - currentPos;
+            setTimeout(() => {
+              if (!botProcess || botProcess.killed) return;
+              // Navigate down to the item
+              for (let i = 0; i < stepsDown; i++) {
+                botProcess.stdin.write('\x1B[B');
+              }
+              // Space to toggle selection
+              setTimeout(() => {
+                if (botProcess && !botProcess.killed) botProcess.stdin.write(' ');
+              }, 100);
+            }, stepDelay);
+            stepDelay += 300;
+            currentPos = itemIdx;
+          });
+          
+          // After selecting all, press enter
+          setTimeout(() => {
+            if (botProcess && !botProcess.killed) botProcess.stdin.write('\r');
+          }, stepDelay + 200);
         } else {
+          // Type text + enter
           botProcess.stdin.write(answer.value + '\n');
         }
 
