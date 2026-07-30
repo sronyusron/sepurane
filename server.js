@@ -180,7 +180,7 @@ app.post('/api/bot/start', (req, res) => {
     answerQueue.push({ type: 'text', value: a.captchaBefore || '10', label: 'Captcha detik sebelum', delay: 1500 });
 
     // Send all answers sequentially with delays
-    let totalDelay = 3000; // Initial wait for bot to start and show first prompt
+    let totalDelay = 6000; // Initial wait 6s for bot to load license + show first prompt
     
     answerQueue.forEach((answer, idx) => {
       setTimeout(() => {
