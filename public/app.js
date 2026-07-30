@@ -75,7 +75,7 @@ $('datainput-form').addEventListener('submit',async e=>{
 const bModal=$('modal-buyer');
 $('btn-add-buyer').addEventListener('click',()=>bModal.classList.remove('hidden'));
 $('close-buyer-modal').addEventListener('click',()=>bModal.classList.add('hidden'));
-bModal.querySelector('.modal-overlay').addEventListener('click',()=>bModal.classList.add('hidden'));
+bModal.querySelector('.modal-bg').addEventListener('click',()=>bModal.classList.add('hidden'));
 $('buyer-form').addEventListener('submit',e=>{
   e.preventDefault();
   const fn=$('b_fn').value.trim(),ln=$('b_ln').value.trim(),em=$('b_em').value.trim();
@@ -129,7 +129,7 @@ $('btn-start').addEventListener('click', async()=>{
   }
 });
 $('close-mode-modal').addEventListener('click',()=>modeModal.classList.add('hidden'));
-modeModal.querySelector('.modal-overlay').addEventListener('click',()=>modeModal.classList.add('hidden'));
+modeModal.querySelector('.modal-bg').addEventListener('click',()=>modeModal.classList.add('hidden'));
 
 // Show/hide fields based on mode
 $('s_mode').addEventListener('change', ()=>{
