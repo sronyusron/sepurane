@@ -1,4 +1,12 @@
 {
+  "name": "sepurane",
+  "version": "1.0.0",
+  "description": "Loket Bot Dashboard - Web interface for managing the ticket bot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "bot": "node loketbot.js"
+  },
   "dependencies": {
     "@faker-js/faker": "^9.8.0",
     "axios": "^1.10.0",
@@ -12,6 +20,7 @@
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",
     "delay": "^5.0.0",
+    "express": "^4.18.2",
     "https-proxy-agent": "^7.0.6",
     "inquirer": "^8.2.6",
     "javascript-obfuscator": "^4.1.1",
