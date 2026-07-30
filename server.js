@@ -114,7 +114,6 @@ app.post('/api/bot/start', (req, res) => {
 
   try {
     const { answers } = req.body || {};
-    // answers = { mode, captcha, dataFile, totalTicket, keyword, keywordCadangan, kodeUndangan, showVa, linkEvent, waktu }
     const a = answers || {};
     botLogs = [];
     addLog('Memulai bot...', 'info');
@@ -126,72 +125,116 @@ app.post('/api/bot/start', (req, res) => {
       stdio: ['pipe', 'pipe', 'pipe']
     });
 
-    // Queue of answers to send sequentially
-    const answerQueue = [];
-    let promptIndex = 0;
+    // Answer queue - each item has type and value
+    // type: 'arrow' = navigate with arrow down + enter
+    // type: 'checkbox' = space to select + enter
+    // type: 'text' = type text + enter
+    const answerQueue = [
+      { type: 'arrow', value: parseInt(a.mode) || 1, label: 'Fitur bot' },
+      { type: 'arrow', value: parseInt(a.captcha) || 1, label: 'Captcha' },
+      { type: 'checkbox', value: parseInt(a.dataFile) || 1, label: 'Data pembeli' },
+      { type: 'text', value: a.totalTicket || '1', label: 'Total tiket' },
+      { type: 'text', value: a.keyword || '', label: 'Keyword tiket' },
+      { type: 'text', value: a.keywordCadangan || '', label: 'Keyword cadangan' },
+      { type: 'text', value: a.kodeUndangan || '', label: 'Kode undangan' },
+      { type: 'arrow', value: parseInt(a.showVa) || 1, label: 'Tampilkan VA' },
+      { type: 'text', value: a.linkEvent || '', label: 'Link event' },
+      { type: 'text', value: a.waktu || '', label: 'Waktu' },
+    ];
 
-    // Build answer queue based on user inputs
-    // 1. Pilih fitur bot (arrow select: 1-4)
-    answerQueue.push({ type: 'arrow', value: parseInt(a.mode) || 1 });
-    // 2. Pilih tipe CAPTCHA (arrow select: 1=Turnstile, 2=reCAPTCHA)
-    answerQueue.push({ type: 'arrow', value: parseInt(a.captcha) || 1 });
-    // 3. Pilih data pembeli (arrow select, biasanya 1)
-    answerQueue.push({ type: 'arrow', value: parseInt(a.dataFile) || 1 });
-    // 4. Total tiket (ketik angka)
-    answerQueue.push({ type: 'text', value: a.totalTicket || '1' });
-    // 5. Keyword tiket (ketik)
-    answerQueue.push({ type: 'text', value: a.keyword || '' });
-    // 6. Keyword cadangan (ketik)
-    answerQueue.push({ type: 'text', value: a.keywordCadangan || '' });
-    // 7. Kode undangan (ketik, bisa kosong)
-    answerQueue.push({ type: 'text', value: a.kodeUndangan || '' });
-    // 8. Tampilkan VA atau tidak (arrow select: 1=Ya, 2=Tidak)
-    answerQueue.push({ type: 'arrow', value: parseInt(a.showVa) || 1 });
-    // 9. Link event (ketik)
-    answerQueue.push({ type: 'text', value: a.linkEvent || '' });
-    // 10. Waktu (enter = langsung, atau ketik waktu)
-    answerQueue.push({ type: 'text', value: a.waktu || '' });
+    let promptIndex = 0;
+    let lastAnswerTime = 0;
+    const DEBOUNCE_MS = 1500; // Wait at least 1.5s between answers
 
     function sendNextAnswer() {
+      const now = Date.now();
+      if (now - lastAnswerTime < DEBOUNCE_MS) return; // Debounce
       if (promptIndex >= answerQueue.length) return;
       if (!botProcess || botProcess.killed) return;
 
       const answer = answerQueue[promptIndex];
       promptIndex++;
+      lastAnswerTime = now;
 
       setTimeout(() => {
         if (!botProcess || botProcess.killed) return;
 
         if (answer.type === 'arrow') {
-          // Navigate with arrow down keys, then press enter
+          // Navigate with arrow down, then enter
           for (let i = 1; i < answer.value; i++) {
             botProcess.stdin.write('\x1B[B'); // Arrow Down
           }
-          botProcess.stdin.write('\r'); // Enter
+          setTimeout(() => {
+            if (botProcess && !botProcess.killed) botProcess.stdin.write('\r');
+          }, 200);
+        } else if (answer.type === 'checkbox') {
+          // Space to select item, then enter to proceed
+          // Navigate to the right item first
+          for (let i = 1; i < answer.value; i++) {
+            botProcess.stdin.write('\x1B[B'); // Arrow Down
+          }
+          setTimeout(() => {
+            if (!botProcess || botProcess.killed) return;
+            botProcess.stdin.write(' '); // Space to toggle selection
+            setTimeout(() => {
+              if (botProcess && !botProcess.killed) botProcess.stdin.write('\r'); // Enter to proceed
+            }, 200);
+          }, 200);
         } else {
           // Type text + enter
           botProcess.stdin.write(answer.value + '\n');
         }
 
-        addLog(`[AUTO-INPUT ${promptIndex}] ${answer.value || '(enter)'}`, 'success');
-      }, 800);
+        addLog(`[AUTO-INPUT ${promptIndex}/${answerQueue.length}] ${answer.label}: ${answer.value || '(enter)'}`, 'success');
+      }, 300);
     }
+
+    // Accumulate output to detect full prompt lines
+    let outputBuffer = '';
+    let promptDetectTimer = null;
 
     botProcess.stdout.on('data', (data) => {
       const output = data.toString();
+      
+      // Log each line
       output.split('\n').filter(l => l.trim()).forEach(line => {
-        addLog(line, 'info');
+        // Clean ANSI escape codes for display
+        const clean = line.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '').trim();
+        if (clean) addLog(clean, 'info');
       });
 
-      // Detect prompts (? or >) and auto-answer
-      if (output.includes('?') || output.includes('Pilih') || output.includes('Masuk') || output.includes('Input') || output.includes('>')) {
-        sendNextAnswer();
-      }
+      // Buffer output and detect prompts with debounce
+      outputBuffer += output;
+      
+      if (promptDetectTimer) clearTimeout(promptDetectTimer);
+      promptDetectTimer = setTimeout(() => {
+        // Check if buffer contains a prompt indicator
+        const hasPrompt = outputBuffer.includes('?') && (
+          outputBuffer.includes('Pilih') ||
+          outputBuffer.includes('Masukkan') ||
+          outputBuffer.includes('Use arrow') ||
+          outputBuffer.includes('Press <space>') ||
+          outputBuffer.includes('(Optional)') ||
+          outputBuffer.includes('link event') ||
+          outputBuffer.includes('Total Ticket') ||
+          outputBuffer.includes('keyword') ||
+          outputBuffer.includes('Kode Undangan') ||
+          outputBuffer.includes('mode:') ||
+          outputBuffer.includes('waktu') ||
+          outputBuffer.includes('Kapan')
+        );
+
+        if (hasPrompt) {
+          sendNextAnswer();
+          outputBuffer = ''; // Clear buffer after answering
+        }
+      }, 800); // Wait 800ms after last data before detecting prompt
     });
 
     botProcess.stderr.on('data', (data) => {
       data.toString().split('\n').filter(l => l.trim()).forEach(line => {
-        addLog(line, 'error');
+        const clean = line.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '').trim();
+        if (clean) addLog(clean, 'error');
       });
     });
 
