@@ -260,7 +260,7 @@ app.post('/api/bot/start', (req, res) => {
       
       // Only send notification once per run
       if (notifSent) {
-        if (outputAccumulator.length > 5000) outputAccumulator = outputAccumulator.slice(-2000);
+        if (outputAccumulator.length > 10000) outputAccumulator = outputAccumulator.slice(-5000);
         return;
       }
 
@@ -286,37 +286,44 @@ app.post('/api/bot/start', (req, res) => {
         sendTelegramNotif(tgMsg);
         outputAccumulator = '';
       }
-      // Pattern 2: "Invoice Code" + "Browser terbuka" (non-VA mode / checkout mode)
-      else if (outputAccumulator.includes('Invoice Code') && outputAccumulator.includes('Browser terbuka')) {
+      // Pattern 2: "Invoice Code" (non-VA / checkout mode)
+      else if (outputAccumulator.includes('Invoice Code:') && outputAccumulator.includes('Browser terbuka')) {
         notifSent = true;
         const block = outputAccumulator;
         const invoiceIdMatch = block.match(/Invoice ID[:\s]*([^\n\r]+)/i);
         const invoiceCodeMatch = block.match(/Invoice Code[:\s]*([^\n\r]+)/i);
         const totalMatch = block.match(/Grand Total[:\s]*([^\n\r]+)/i);
-        const linkMatch = block.match(/(https?:\/\/[^\s\n\r]+)/gi);
+        const titleMatch = block.match(/Title[:\s]*([^\n\r]+)/i);
+        const emailMatch = block.match(/Email\s*:\s*([^\n\r]+)/i);
         
-        // Get the last URL (usually the invoice page URL)
-        let invoiceLink = '';
-        if (linkMatch && linkMatch.length) {
-          // Find loket.com link (invoice/payment page)
-          const loketLink = linkMatch.find(l => l.includes('loket.com'));
-          invoiceLink = loketLink || linkMatch[linkMatch.length - 1];
-        }
+        // Construct invoice link from invoice code
+        let invoiceCode = invoiceCodeMatch ? invoiceCodeMatch[1].trim() : '';
+        let invoiceLink = invoiceCode ? `https://www.loket.com/payment/${invoiceCode}` : '';
         
         let tgMsg = '✅ <b>LOKET ORDER BERHASIL!</b>\n\n';
         tgMsg += '🎉 <i>Browser terbuka di halaman invoice</i>\n\n';
-        if (invoiceCodeMatch) tgMsg += `🎫 Invoice Code: <code>${invoiceCodeMatch[1].trim()}</code>\n`;
+        if (invoiceCodeMatch) tgMsg += `🎫 Invoice Code: <code>${invoiceCode}</code>\n`;
         if (invoiceIdMatch) tgMsg += `🆔 Invoice ID: <code>${invoiceIdMatch[1].trim()}</code>\n`;
         if (totalMatch) tgMsg += `💰 Total: ${totalMatch[1].trim()}\n`;
+        if (titleMatch) tgMsg += `🎟 Tiket: ${titleMatch[1].trim()}\n`;
+        if (emailMatch) tgMsg += `📧 Email: ${emailMatch[1].trim()}\n`;
         if (invoiceLink) tgMsg += `\n🔗 <b>Link Invoice:</b>\n${invoiceLink}`;
         
         sendTelegramNotif(tgMsg);
         outputAccumulator = '';
+        
+        // Auto-answer "menutup browser" prompt
+        setTimeout(() => {
+          if (botProcess && !botProcess.killed) {
+            botProcess.stdin.write('n\n');
+            addLog('[AUTO-INPUT] Menutup browser: n', 'success');
+          }
+        }, 2000);
       }
       
-      // Keep accumulator manageable
-      if (outputAccumulator.length > 5000) {
-        outputAccumulator = outputAccumulator.slice(-2000);
+      // Keep accumulator manageable (increased to 10KB)
+      if (outputAccumulator.length > 10000) {
+        outputAccumulator = outputAccumulator.slice(-5000);
       }
     });
 
