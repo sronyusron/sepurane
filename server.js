@@ -92,24 +92,61 @@ app.post('/api/bot/logs/clear', (req, res) => {
   res.json({ success: true, message: 'Log dibersihkan!' });
 });
 
+// --- Send input to bot (for interactive menus) ---
+app.post('/api/bot/input', (req, res) => {
+  if (!botProcess || botProcess.killed) {
+    return res.json({ success: false, message: 'Bot tidak sedang berjalan!' });
+  }
+  try {
+    const { text } = req.body;
+    botProcess.stdin.write(text + '\n');
+    addLog(`[INPUT] User memilih: ${text}`, 'info');
+    res.json({ success: true, message: 'Input dikirim ke bot.' });
+  } catch (e) {
+    res.status(500).json({ success: false, message: 'Gagal kirim input: ' + e.message });
+  }
+});
+
 app.post('/api/bot/start', (req, res) => {
   if (botProcess && !botProcess.killed) {
     return res.json({ success: false, message: 'Bot sudah berjalan!' });
   }
 
   try {
+    const { mode } = req.body || {};
     botLogs = [];
     addLog('Memulai bot...', 'info');
 
     botProcess = spawn('node', ['loketbot.js'], {
       cwd: __dirname,
-      env: { ...process.env }
+      env: { ...process.env, BOT_MODE: mode || '1' },
+      stdio: ['pipe', 'pipe', 'pipe']
     });
 
+    // Auto-answer the inquirer menu selection
+    let menuAnswered = false;
     botProcess.stdout.on('data', (data) => {
-      data.toString().split('\n').filter(l => l.trim()).forEach(line => {
+      const output = data.toString();
+      output.split('\n').filter(l => l.trim()).forEach(line => {
         addLog(line, 'info');
       });
+
+      // Detect inquirer menu prompt and auto-select the mode
+      if (!menuAnswered && output.includes('Pilih fiture bot')) {
+        setTimeout(() => {
+          if (botProcess && !botProcess.killed) {
+            // Simulate arrow key navigation + enter for inquirer
+            const modeNum = parseInt(mode) || 1;
+            // Send arrow down keys to navigate (mode 1 = no arrows, mode 2 = 1 down, etc.)
+            for (let i = 1; i < modeNum; i++) {
+              botProcess.stdin.write('\x1B[B'); // Arrow Down
+            }
+            botProcess.stdin.write('\r'); // Enter to confirm
+            menuAnswered = true;
+            addLog(`[AUTO] Memilih fitur: ${mode}`, 'success');
+          }
+        }, 500);
+      }
     });
 
     botProcess.stderr.on('data', (data) => {
@@ -128,7 +165,7 @@ app.post('/api/bot/start', (req, res) => {
       botProcess = null;
     });
 
-    res.json({ success: true, message: 'Bot berhasil dijalankan!' });
+    res.json({ success: true, message: `Bot dijalankan dengan mode ${mode || '1'}!` });
   } catch (e) {
     res.status(500).json({ success: false, message: 'Gagal: ' + e.message });
   }

@@ -242,3 +242,11 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-mai
 .modal-close { background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; }
 .modal-close:hover { color: var(--text-primary); }
 .modal-body { padding: 24px; }
+
+
+.mode-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.mode-btn { display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: var(--bg-input); border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; text-align: left; color: var(--text-primary); }
+.mode-btn:hover { border-color: var(--primary); background: rgba(99,102,241,0.05); transform: translateY(-1px); }
+.mode-num { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; flex-shrink: 0; }
+.mode-text { font-size: 0.9rem; font-weight: 600; line-height: 1.4; }
+.mode-text small { font-weight: 400; color: var(--text-secondary); font-size: 0.75rem; }

@@ -11,10 +11,10 @@ function showToast(msg, type='info') {
 }
 
 async function api(url, method='GET', body=null) {
-  const opts = { method, headers:{'Content-Type':'application/json'} };
-  if (body) opts.body = JSON.stringify(body);
-  try { const r = await fetch(url, opts); return await r.json(); }
-  catch(e) { return {success:false,message:'Koneksi gagal: '+e.message}; }
+  const opts={method, headers:{'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  try{const r=await fetch(url,opts);return await r.json();}
+  catch(e){return{success:false,message:'Koneksi gagal: '+e.message};}
 }
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
@@ -22,58 +22,53 @@ function esc(s){const d=document.createElement('div');d.textContent=s;return d.i
 // Navigation
 const titles={dashboard:'Dashboard',config:'Konfigurasi',datainput:'Data Pembeli',cookie:'Cookie (Hasil)',logs:'Log Bot'};
 document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',e=>{
-  e.preventDefault(); switchSection(n.dataset.section); $('sidebar').classList.remove('open');
+  e.preventDefault();switchSection(n.dataset.section);$('sidebar').classList.remove('open');
 }));
-function switchSection(name) {
+function switchSection(name){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.querySelector(`[data-section="${name}"]`).classList.add('active');
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   $('section-'+name).classList.add('active');
   $('page-title').textContent=titles[name]||'';
-  if(name==='dashboard') loadDashboard();
-  if(name==='config') loadConfig();
-  if(name==='datainput') loadDataInput();
-  if(name==='cookie') loadCookie();
-  if(name==='logs') loadLogs();
+  if(name==='dashboard')loadDashboard();
+  if(name==='config')loadConfig();
+  if(name==='datainput')loadDataInput();
+  if(name==='cookie')loadCookie();
+  if(name==='logs')loadLogs();
 }
 $('menu-toggle').addEventListener('click',()=>$('sidebar').classList.toggle('open'));
 
-
 // Dashboard
-async function loadDashboard() {
-  const st = await api('/api/bot/status');
-  if(st.success) {
-    updateBotUI(st.running);
-    const logEl=$('dash-log');
-    if(st.logs&&st.logs.length) {
-      logEl.innerHTML=st.logs.slice(-8).map(l=>`<div class="log-line ${l.type==='error'?'error':l.type==='success'?'success':''}">[${l.time}] ${esc(l.msg)}</div>`).join('');
-    } else { logEl.innerHTML='<p class="log-empty">Belum ada log.</p>'; }
-  }
-  const di = await api('/api/datainput');
-  if(di.success) { const lines=di.data?di.data.split('\n').filter(l=>l.trim()):[];$('dash-buyers').textContent=lines.length+' pembeli'; }
-  const cfg = await api('/api/config');
-  if(cfg.success&&cfg.data&&cfg.data[0]) { const c=cfg.data[0]; $('dash-config').textContent=(c.api_key&&c.api_key!=='capsolverkalian')?'Sudah diatur':'Belum diatur'; }
-  const ck = await api('/api/cookie');
-  if(ck.success) { $('dash-cookie').textContent=ck.data?'Ada':'Belum ada'; }
+async function loadDashboard(){
+  const st=await api('/api/bot/status');
+  if(st.success){updateBotUI(st.running);const el=$('dash-log');
+    if(st.logs&&st.logs.length){el.innerHTML=st.logs.slice(-8).map(l=>`<div class="log-line ${l.type==='error'?'error':l.type==='success'?'success':''}">[${l.time}] ${esc(l.msg)}</div>`).join('');}
+    else{el.innerHTML='<p class="log-empty">Belum ada log.</p>';}}
+  const di=await api('/api/datainput');
+  if(di.success){const lines=di.data?di.data.split('\n').filter(l=>l.trim()):[];$('dash-buyers').textContent=lines.length+' pembeli';}
+  const cfg=await api('/api/config');
+  if(cfg.success&&cfg.data&&cfg.data[0]){const c=cfg.data[0];$('dash-config').textContent=(c.api_key&&c.api_key!=='capsolverkalian')?'Sudah diatur':'Belum diatur';}
+  const ck=await api('/api/cookie');
+  if(ck.success){$('dash-cookie').textContent=ck.data?'Ada':'Belum ada';}
 }
 
 // Config
-async function loadConfig() {
-  const r = await api('/api/config');
-  if(r.success&&r.data&&r.data[0]) { $('api_key').value=r.data[0].api_key||''; $('telegram_bot_token').value=r.data[0].telegram_bot_token||''; $('telegram_chat_id').value=r.data[0].telegram_chat_id||''; }
+async function loadConfig(){
+  const r=await api('/api/config');
+  if(r.success&&r.data&&r.data[0]){$('api_key').value=r.data[0].api_key||'';$('telegram_bot_token').value=r.data[0].telegram_bot_token||'';$('telegram_chat_id').value=r.data[0].telegram_chat_id||'';}
 }
-$('config-form').addEventListener('submit', async e=>{
+$('config-form').addEventListener('submit',async e=>{
   e.preventDefault();
   const r=await api('/api/config','POST',{api_key:$('api_key').value.trim(),telegram_bot_token:$('telegram_bot_token').value.trim(),telegram_chat_id:$('telegram_chat_id').value.trim()});
-  showToast(r.message, r.success?'success':'error');
+  showToast(r.message,r.success?'success':'error');
 });
 
 // Data Input
-async function loadDataInput() { const r=await api('/api/datainput'); if(r.success) $('datainput_textarea').value=r.data||''; }
-$('datainput-form').addEventListener('submit', async e=>{
+async function loadDataInput(){const r=await api('/api/datainput');if(r.success)$('datainput_textarea').value=r.data||'';}
+$('datainput-form').addEventListener('submit',async e=>{
   e.preventDefault();
   const r=await api('/api/datainput','POST',{data:$('datainput_textarea').value});
-  showToast(r.message, r.success?'success':'error');
+  showToast(r.message,r.success?'success':'error');
 });
 
 // Add Buyer Modal
@@ -88,94 +83,54 @@ $('buyer-form').addEventListener('submit',e=>{
   if(!fn||!ln||!em||!hp||!nik||!dob){showToast('Semua field harus diisi!','error');return;}
   const ta=$('datainput_textarea');
   ta.value=(ta.value.trim()?ta.value.trim()+'\n':'')+`${fn}|${ln}|${em}|${hp}|${nik}|${jk}|${dob}`;
-  $('buyer-form').reset(); bModal.classList.add('hidden');
+  $('buyer-form').reset();bModal.classList.add('hidden');
   showToast('Ditambahkan! Klik Simpan.','success');
 });
 
-// Cookie (read-only - generated by bot after successful order)
-async function loadCookie() {
-  const r = await api('/api/cookie');
-  const el=$('cookie-content');
-  if(r.success&&r.data) { el.textContent=r.data; el.className='cookie-display'; }
-  else { el.innerHTML='<span class="cookie-empty">Belum ada cookie. Jalankan bot dan tunggu order berhasil.</span>'; }
+// Cookie (read-only)
+async function loadCookie(){
+  const r=await api('/api/cookie');const el=$('cookie-content');
+  if(r.success&&r.data){el.textContent=r.data;el.className='cookie-display';}
+  else{el.innerHTML='<span class="cookie-empty">Belum ada cookie. Jalankan bot dan tunggu order berhasil.</span>';}
 }
-$('btn-refresh-cookie').addEventListener('click', loadCookie);
-
+$('btn-refresh-cookie').addEventListener('click',loadCookie);
 
 // Logs
-async function loadLogs() {
-  const r = await api('/api/bot/logs');
-  const el=$('log-container');
-  if(r.success&&r.logs&&r.logs.length) {
-    el.innerHTML=r.logs.map(l=>`<div class="log-line ${l.type==='error'?'error':l.type==='success'?'success':''}">[${l.time}] ${esc(l.msg)}</div>`).join('');
-    el.scrollTop=el.scrollHeight;
-  } else { el.innerHTML='<p class="log-empty">Belum ada log.</p>'; }
+async function loadLogs(){
+  const r=await api('/api/bot/logs');const el=$('log-container');
+  if(r.success&&r.logs&&r.logs.length){el.innerHTML=r.logs.map(l=>`<div class="log-line ${l.type==='error'?'error':l.type==='success'?'success':''}">[${l.time}] ${esc(l.msg)}</div>`).join('');el.scrollTop=el.scrollHeight;}
+  else{el.innerHTML='<p class="log-empty">Belum ada log.</p>';}
 }
-$('btn-clear-logs').addEventListener('click', async()=>{
-  const r=await api('/api/bot/logs/clear','POST');
-  if(r.success){$('log-container').innerHTML='<p class="log-empty">Log dibersihkan.</p>';showToast(r.message,'success');}
-});
-$('btn-refresh-logs').addEventListener('click', loadLogs);
+$('btn-clear-logs').addEventListener('click',async()=>{const r=await api('/api/bot/logs/clear','POST');if(r.success){$('log-container').innerHTML='<p class="log-empty">Log dibersihkan.</p>';showToast(r.message,'success');}});
+$('btn-refresh-logs').addEventListener('click',loadLogs);
 
-// Bot Control
-$('btn-start').addEventListener('click', async()=>{
-  const r=await api('/api/bot/start','POST');
-  showToast(r.message, r.success?'success':'error');
-  if(r.success) updateBotUI(true);
+// Bot Control - Mode Selection Modal
+const modeModal=$('modal-mode');
+$('btn-start').addEventListener('click',()=>modeModal.classList.remove('hidden'));
+$('close-mode-modal').addEventListener('click',()=>modeModal.classList.add('hidden'));
+modeModal.querySelector('.modal-overlay').addEventListener('click',()=>modeModal.classList.add('hidden'));
+
+document.querySelectorAll('.mode-btn').forEach(btn=>{
+  btn.addEventListener('click',async()=>{
+    const mode=btn.dataset.mode;
+    modeModal.classList.add('hidden');
+    showToast('Memulai bot mode '+mode+'...','info');
+    const r=await api('/api/bot/start','POST',{mode});
+    showToast(r.message,r.success?'success':'error');
+    if(r.success)updateBotUI(true);
+  });
 });
-$('btn-stop').addEventListener('click', async()=>{
+
+$('btn-stop').addEventListener('click',async()=>{
   const r=await api('/api/bot/stop','POST');
-  showToast(r.message, r.success?'success':'error');
-  if(r.success) updateBotUI(false);
+  showToast(r.message,r.success?'success':'error');
+  if(r.success)updateBotUI(false);
 });
 
-function updateBotUI(running) {
-  $('btn-start').classList.toggle('hidden', running);
-  $('btn-stop').classList.toggle('hidden', !running);
-  $('sidebar-dot').classList.toggle('active', running);
-  $('sidebar-status').textContent=running?'Bot Aktif':'Bot Mati';
-  $('dash-status').textContent=running?'Aktif':'Tidak Aktif';
-  $('dash-status').style.color=running?'var(--success)':'var(--danger)';
-}
-
-// Auto-refresh status every 5s
-setInterval(async()=>{const r=await api('/api/bot/status');if(r.success)updateBotUI(r.running);},5000);
-
-// Init
-loadDashboard();
-
-
-// Logs
-async function loadLogs() {
-  const r = await api('/api/bot/logs');
-  const el=$('log-container');
-  if(r.success&&r.logs&&r.logs.length) {
-    el.innerHTML=r.logs.map(l=>`<div class="log-line ${l.type==='error'?'error':l.type==='success'?'success':''}">[${l.time}] ${esc(l.msg)}</div>`).join('');
-    el.scrollTop=el.scrollHeight;
-  } else { el.innerHTML='<p class="log-empty">Belum ada log.</p>'; }
-}
-$('btn-clear-logs').addEventListener('click', async()=>{
-  const r=await api('/api/bot/logs/clear','POST');
-  if(r.success){$('log-container').innerHTML='<p class="log-empty">Log dibersihkan.</p>';showToast(r.message,'success');}
-});
-$('btn-refresh-logs').addEventListener('click', loadLogs);
-
-// Bot Control
-$('btn-start').addEventListener('click', async()=>{
-  const r=await api('/api/bot/start','POST');
-  showToast(r.message, r.success?'success':'error');
-  if(r.success) updateBotUI(true);
-});
-$('btn-stop').addEventListener('click', async()=>{
-  const r=await api('/api/bot/stop','POST');
-  showToast(r.message, r.success?'success':'error');
-  if(r.success) updateBotUI(false);
-});
-
-function updateBotUI(running) {
-  $('btn-start').classList.toggle('hidden', running);
-  $('btn-stop').classList.toggle('hidden', !running);
-  $('sidebar-dot').classList.toggle('active', running);
+function updateBotUI(running){
+  $('btn-start').classList.toggle('hidden',running);
+  $('btn-stop').classList.toggle('hidden',!running);
+  $('sidebar-dot').classList.toggle('active',running);
   $('sidebar-status').textContent=running?'Bot Aktif':'Bot Mati';
   $('dash-status').textContent=running?'Aktif':'Tidak Aktif';
   $('dash-status').style.color=running?'var(--success)':'var(--danger)';
