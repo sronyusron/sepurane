@@ -138,9 +138,24 @@ app.post('/api/bot/start', (req, res) => {
       { type: 'text', value: a.keywordCadangan || '', label: 'Keyword cadangan' },
       { type: 'text', value: a.kodeUndangan || '', label: 'Kode undangan' },
       { type: 'arrow', value: parseInt(a.showVa) || 1, label: 'Tampilkan VA' },
-      { type: 'text', value: a.linkEvent || '', label: 'Link event' },
-      { type: 'text', value: a.waktu || '', label: 'Waktu' },
     ];
+
+    // Mode-specific prompts (after VA selection)
+    const mode = parseInt(a.mode) || 1;
+    if (mode === 2) {
+      // Mode 2: domain + clue + day
+      answerQueue.push({ type: 'text', value: a.domain || '', label: 'Domain' });
+      answerQueue.push({ type: 'text', value: a.clue || '', label: 'Clue' });
+      answerQueue.push({ type: 'text', value: a.day || '', label: 'Day' });
+    } else {
+      // Mode 1/3/4: link event/widget
+      answerQueue.push({ type: 'text', value: a.linkEvent || '', label: 'Link event/widget' });
+    }
+
+    // Waktu (all modes)
+    answerQueue.push({ type: 'text', value: a.waktu || '', label: 'Waktu' });
+    // Solve captcha seconds before target (all modes)
+    answerQueue.push({ type: 'text', value: a.captchaBefore || '10', label: 'Captcha detik sebelum' });
 
     let promptIndex = 0;
     let lastAnswerTime = 0;

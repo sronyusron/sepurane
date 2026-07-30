@@ -110,6 +110,16 @@ $('btn-start').addEventListener('click',()=>modeModal.classList.remove('hidden')
 $('close-mode-modal').addEventListener('click',()=>modeModal.classList.add('hidden'));
 modeModal.querySelector('.modal-overlay').addEventListener('click',()=>modeModal.classList.add('hidden'));
 
+// Show/hide fields based on mode
+$('s_mode').addEventListener('change', ()=>{
+  const mode = $('s_mode').value;
+  // Mode 2: show domain/clue/day, hide link
+  $('fg-link').classList.toggle('hidden', mode==='2');
+  $('fg-domain').classList.toggle('hidden', mode!=='2');
+  $('fg-clue').classList.toggle('hidden', mode!=='2');
+  $('fg-day').classList.toggle('hidden', mode!=='2');
+});
+
 $('start-bot-form').addEventListener('submit', async(e)=>{
   e.preventDefault();
   modeModal.classList.add('hidden');
@@ -124,7 +134,11 @@ $('start-bot-form').addEventListener('submit', async(e)=>{
     kodeUndangan: $('s_kode').value,
     showVa: $('s_va').value,
     linkEvent: $('s_link').value,
-    waktu: $('s_waktu').value
+    domain: $('s_domain').value,
+    clue: $('s_clue').value,
+    day: $('s_day').value,
+    waktu: $('s_waktu').value,
+    captchaBefore: $('s_captcha_before').value || '10'
   };
 
   showToast('Memulai bot...','info');

@@ -157,17 +157,38 @@
             <option value="2">Tidak</option>
           </select>
         </div>
-        <!-- 9. Link Event -->
-        <div class="form-group">
-          <label><i class="fas fa-link"></i> Link Event</label>
-          <input type="text" id="s_link" placeholder="https://www.loket.com/event/...">
-          <small>URL event dari loket.com</small>
+        <!-- 9. Link/Domain (tergantung mode) -->
+        <div class="form-group" id="fg-link">
+          <label><i class="fas fa-link"></i> Link Event / Widget</label>
+          <input type="text" id="s_link" placeholder="https://www.loket.com/event/... atau https://widget.loket.com/widget/...">
+          <small>Mode 1: link widget. Mode 3/4: link event.</small>
+        </div>
+        <div class="form-group hidden" id="fg-domain">
+          <label><i class="fas fa-globe"></i> Domain</label>
+          <input type="text" id="s_domain" placeholder="Masukkan domain">
+          <small>Mode 2: domain event</small>
+        </div>
+        <div class="form-group hidden" id="fg-clue">
+          <label><i class="fas fa-puzzle-piece"></i> Clue</label>
+          <input type="text" id="s_clue" placeholder="Masukkan clue">
+          <small>Mode 2: clue untuk pencarian</small>
+        </div>
+        <div class="form-group hidden" id="fg-day">
+          <label><i class="fas fa-calendar-day"></i> Day</label>
+          <input type="text" id="s_day" placeholder="Masukkan day (contoh: 1, 2, dll)">
+          <small>Mode 2: hari event</small>
         </div>
         <!-- 10. Waktu -->
         <div class="form-group">
           <label><i class="fas fa-clock"></i> Waktu Eksekusi</label>
-          <input type="text" id="s_waktu" placeholder="Kosongkan = langsung jalan. Format: HH:MM:SS">
-          <small>Kosongkan untuk langsung jalan. Isi waktu jika mau schedule (contoh: 10:00:00)</small>
+          <input type="text" id="s_waktu" placeholder="Kosongkan = langsung jalan. Format: HH:mm:ss">
+          <small>Kosongkan = langsung. Isi waktu jika schedule (contoh: 10:00:00)</small>
+        </div>
+        <!-- 11. Solve captcha sebelum -->
+        <div class="form-group">
+          <label><i class="fas fa-hourglass-half"></i> Solve Captcha Berapa Detik Sebelum Target?</label>
+          <input type="number" id="s_captcha_before" value="10" min="0" placeholder="10">
+          <small>Berapa detik sebelum waktu target captcha di-solve (default: 10)</small>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-success" style="width:100%;justify-content:center;padding:14px"><i class="fas fa-rocket"></i> JALANKAN BOT</button>
